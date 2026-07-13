@@ -10,47 +10,21 @@
 #     "tqdm",
 #     "matplotlib",
 #     "pandas",
+#     "scikit-learn",
 # ]
 # ///
 """
-Residual Stream Attractor Extraction Tool
+Residual Stream Attractor Extraction Tool v2
 
-Loads DeepSeek (or compatible model) and runs predefined prompt groups
-through it, capturing the FULL residual stream at every layer for every
-token position. Saves raw data as CSV files organized by group and layer.
-
-Hypothesis: In later layers, residual stream vectors for prompts that
-should predict the same token (e.g., "Berlin") are attracted toward
-a common point (attractor) regardless of the input language or framing.
-
-Output structure:
-    output_dir/
-    +-- {group_name}/
-    |   +-- raw_streams/
-    |   |   +-- layer_000/
-    |   |   |   +-- prompt_000.csv    # columns: dim_0, dim_1, ..., dim_N; rows: token positions
-    |   |   |   +-- prompt_001.csv
-    |   |   |   +-- ...
-    |   |   +-- layer_001/
-    |   |   +-- ...
-    |   +-- final_token_streams/
-    |   |   +-- layer_000.csv          # columns: dim_0..dim_N; rows: one per prompt
-    |   |   +-- layer_001.csv
-    |   |   +-- ...
-    |   |   +-- all_layers.csv         # columns: layer, prompt_idx, dim_0..dim_N
-    |   +-- centroids/
-    |   |   +-- centroids_all_layers.csv  # columns: layer, dim_0..dim_N
-    |   +-- metrics.json
-    |   +-- prompts_meta.csv
-    +-- visualizations/
-    |   +-- convergence_trajectories.png
-    |   +-- cosine_similarity_heatmaps.png
-    |   +-- cross_group_distances.png
-    |   +-- pca_final_layer.png
-    +-- cross_group_comparison.json
+Changes from v1:
+- Fixed CSV encoding (UTF-8 enforced everywhere)
+- Shows predicted next token prominently in all outputs
+- Animated visualization of points converging to attractors across layers
+- Attractor geometry extraction (point, ring, torus classification)
+- New prompt groups designed to produce non-point attractors (ambiguous predictions)
 
 Usage:
-    uv run residual_attractors.py [--model deepseek-ai/deepseek-llm-7b-base] [--device cuda]
+    uv run residual_attractors.py [--model-preset gpt2] [--device auto]
 """
 
 import sys
@@ -115,9 +89,13 @@ import numpy as np
 import pandas as pd
 import torch
 import matplotlib
-matplotlib.use("Agg")  # Non-interactive backend for cluster/headless
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation, PillowWriter
 from matplotlib.gridspec import GridSpec
+from mpl_toolkits.mplot3d import Axes3D
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from tqdm import tqdm
 
@@ -132,14 +110,17 @@ class PromptGroup:
     name: str
     target_token: str
     attractor_concept: str
+    expected_geometry: str = "point"  # "point", "ring", "torus", "cloud"
     prompts: list[str] = field(default_factory=list)
 
 
 ATTRACTOR_GROUPS: list[PromptGroup] = [
+    # === EXISTING GROUPS (all point attractors) ===
     PromptGroup(
         name="paris_multilingual",
         target_token="Paris",
         attractor_concept="Paris (capital of France)",
+        expected_geometry="point",
         prompts=[
             "The capital of France is",
             "Die Hauptstadt von Frankreich ist",
@@ -159,6 +140,7 @@ ATTRACTOR_GROUPS: list[PromptGroup] = [
         name="berlin_multilingual",
         target_token="Berlin",
         attractor_concept="Berlin (capital of Germany)",
+        expected_geometry="point",
         prompts=[
             "The capital of Germany is",
             "Die Hauptstadt von Deutschland ist",
@@ -178,6 +160,7 @@ ATTRACTOR_GROUPS: list[PromptGroup] = [
         name="tokyo_multilingual",
         target_token="Tokyo",
         attractor_concept="Tokyo (capital of Japan)",
+        expected_geometry="point",
         prompts=[
             "The capital of Japan is",
             "Die Hauptstadt von Japan ist",
@@ -194,6 +177,7 @@ ATTRACTOR_GROUPS: list[PromptGroup] = [
         name="london_multilingual",
         target_token="London",
         attractor_concept="London (capital of UK)",
+        expected_geometry="point",
         prompts=[
             "The capital of England is",
             "The capital of the United Kingdom is",
@@ -210,6 +194,7 @@ ATTRACTOR_GROUPS: list[PromptGroup] = [
         name="four_arithmetic",
         target_token="4",
         attractor_concept="The number 4",
+        expected_geometry="point",
         prompts=[
             "2 + 2 =",
             "8 / 2 =",
@@ -224,6 +209,7 @@ ATTRACTOR_GROUPS: list[PromptGroup] = [
         name="water_concept",
         target_token="water",
         attractor_concept="Water (H2O, the substance)",
+        expected_geometry="point",
         prompts=[
             "H2O is commonly known as",
             "The chemical formula for water is H2O. Water is also called",
@@ -238,6 +224,7 @@ ATTRACTOR_GROUPS: list[PromptGroup] = [
         name="sun_concept",
         target_token="Sun",
         attractor_concept="The Sun (our star)",
+        expected_geometry="point",
         prompts=[
             "The star at the center of our solar system is the",
             "Earth orbits around the",
@@ -251,6 +238,7 @@ ATTRACTOR_GROUPS: list[PromptGroup] = [
         name="einstein_person",
         target_token="Einstein",
         attractor_concept="Albert Einstein",
+        expected_geometry="point",
         prompts=[
             "E = mc\u00b2 was discovered by Albert",
             "The theory of relativity was developed by",
@@ -259,15 +247,269 @@ ATTRACTOR_GROUPS: list[PromptGroup] = [
             "The Nobel Prize in Physics 1921 was awarded to Albert",
         ],
     ),
+
+    # === NEW GROUPS: Expected NON-POINT attractors ===
+
+    # RING/ANNULAR attractor: Multiple equally-likely color tokens
+    # The model should be uncertain between several colors → residual streams
+    # should form a ring or cloud around the color subspace
+    PromptGroup(
+        name="color_ambiguous_ring",
+        target_token="[ambiguous:color]",
+        attractor_concept="An ambiguous color (red/blue/green/yellow equally likely)",
+        expected_geometry="ring",
+        prompts=[
+            "My favorite color is",
+            "The color I like most is",
+            "She painted the wall",
+            "His shirt was",
+            "The car was painted",
+            "I chose the",
+            "The flower was",
+            "Her dress was a beautiful shade of",
+            "The sky turned a deep",
+            "He picked up the",
+            "The balloon was",
+            "They decorated the room in",
+            "The bird had bright",
+            "The candy was colored",
+            "She dyed her hair",
+        ],
+    ),
+
+    # TORUS attractor: Two independent ambiguity axes
+    # Axis 1: name (John/Mary/James/Sarah...) - who
+    # Axis 2: action (said/went/took/saw...) - what they did
+    # The combination should create a 2D manifold (torus-like)
+    PromptGroup(
+        name="name_action_torus",
+        target_token="[ambiguous:name]",
+        attractor_concept="Ambiguous person name (many equally likely names)",
+        expected_geometry="torus",
+        prompts=[
+            "Once upon a time, there was a person named",
+            "The story begins with a character called",
+            "In the village, everyone knew",
+            "The protagonist of the novel is",
+            "Dear",
+            "Hello, my name is",
+            "The patient's name is",
+            "The suspect was identified as",
+            "The winner of the competition is",
+            "Ladies and gentlemen, please welcome",
+            "The new employee is called",
+            "The teacher introduced herself as",
+            "The detective's name was",
+            "Born in 1990,",
+            "The hero of our story,",
+        ],
+    ),
+
+    # RING attractor: Day of the week (7 equally likely options forming a cycle)
+    PromptGroup(
+        name="weekday_ring",
+        target_token="[ambiguous:weekday]",
+        attractor_concept="Day of the week (cyclic, 7 options)",
+        expected_geometry="ring",
+        prompts=[
+            "Today is",
+            "The meeting is scheduled for",
+            "I was born on a",
+            "The appointment is on",
+            "Let's meet on",
+            "The deadline is",
+            "School starts on",
+            "The concert is on",
+            "My day off is",
+            "The flight departs on",
+            "The exam is on",
+            "We always go shopping on",
+        ],
+    ),
+
+    # CLOUD attractor: Highly ambiguous continuation (many tokens possible)
+    PromptGroup(
+        name="open_ended_cloud",
+        target_token="[ambiguous:anything]",
+        attractor_concept="Maximally ambiguous continuation (high entropy)",
+        expected_geometry="cloud",
+        prompts=[
+            "The",
+            "I",
+            "It",
+            "There",
+            "When",
+            "After",
+            "Before",
+            "If",
+            "Although",
+            "However",
+            "Meanwhile",
+            "Furthermore",
+        ],
+    ),
+
+    # RING attractor: Numbers 1-10 (ordered, cyclic-ish)
+    PromptGroup(
+        name="number_ambiguous_ring",
+        target_token="[ambiguous:number]",
+        attractor_concept="Ambiguous number (1-10 equally plausible)",
+        expected_geometry="ring",
+        prompts=[
+            "Pick a number between 1 and 10:",
+            "I'm thinking of a number. It is",
+            "The winning lottery number is",
+            "Roll the dice. The result is",
+            "On a scale of 1 to 10, I'd rate it",
+            "The answer to the riddle is the number",
+            "Chapter",
+            "Question number",
+            "The score was",
+            "He held up",
+        ],
+    ),
 ]
 
 
 # =============================================================================
-# CSV Data Saver
+# Attractor Geometry Analyzer
+# =============================================================================
+
+class AttractorGeometryAnalyzer:
+    """Analyzes the geometric structure of attractor clusters.
+    
+    Classifies attractors as:
+    - point: All streams converge to a single point (1 dominant eigenvalue ~ 0)
+    - ring: Streams form a 1D manifold (1 large eigenvalue, rest small)
+    - torus: Streams form a 2D manifold (2 large eigenvalues, rest small)
+    - cloud: No clear structure (many comparable eigenvalues)
+    """
+
+    def __init__(self, n_components: int = 10):
+        self.n_components = n_components
+
+    def analyze(self, streams: np.ndarray, group_name: str = "") -> dict:
+        """
+        Analyze geometry of a set of residual stream vectors.
+        
+        Args:
+            streams: (n_prompts, d_model) array of final-layer residual streams
+            group_name: name for reporting
+            
+        Returns:
+            dict with geometry classification and metrics
+        """
+        n_samples, d_model = streams.shape
+
+        if n_samples < 3:
+            return {
+                "group_name": group_name,
+                "classification": "insufficient_data",
+                "n_samples": n_samples,
+            }
+
+        # Center the data
+        centroid = streams.mean(axis=0)
+        centered = streams - centroid
+
+        # PCA
+        n_comp = min(self.n_components, n_samples - 1, d_model)
+        pca = PCA(n_components=n_comp)
+        projected = pca.fit_transform(centered)
+
+        explained_variance = pca.explained_variance_ratio_
+        cumulative_variance = np.cumsum(explained_variance)
+
+        # Compute spread metrics
+        total_variance = np.sum(pca.explained_variance_)
+        mean_distance_to_centroid = np.mean(np.linalg.norm(centered, axis=1))
+        max_distance_to_centroid = np.max(np.linalg.norm(centered, axis=1))
+
+        # Classification heuristics
+        # Point: very low total variance relative to centroid norm
+        centroid_norm = np.linalg.norm(centroid)
+        relative_spread = mean_distance_to_centroid / (centroid_norm + 1e-10)
+
+        # Dimensionality estimation: how many PCs needed for 90% variance?
+        dims_for_90 = int(np.searchsorted(cumulative_variance, 0.90)) + 1
+        dims_for_95 = int(np.searchsorted(cumulative_variance, 0.95)) + 1
+
+        # Eigenvalue ratios
+        if len(explained_variance) >= 2:
+            ratio_1_2 = explained_variance[0] / (explained_variance[1] + 1e-10)
+        else:
+            ratio_1_2 = float('inf')
+
+        if len(explained_variance) >= 3:
+            ratio_2_3 = explained_variance[1] / (explained_variance[2] + 1e-10)
+        else:
+            ratio_2_3 = float('inf')
+
+        # Classification logic
+        if relative_spread < 0.01:
+            classification = "point"
+            confidence = 1.0 - relative_spread * 100
+        elif dims_for_90 == 1 and ratio_1_2 > 5.0:
+            classification = "ring"  # 1D manifold
+            confidence = min(ratio_1_2 / 10.0, 1.0)
+        elif dims_for_90 <= 2 and ratio_2_3 > 3.0:
+            classification = "torus"  # 2D manifold
+            confidence = min(ratio_2_3 / 6.0, 1.0)
+        elif dims_for_90 <= 3:
+            classification = "low_dim_manifold"
+            confidence = 0.5
+        else:
+            classification = "cloud"
+            confidence = 1.0 - (3.0 / dims_for_90)
+
+        # Check for ring structure: project onto first 2 PCs and check circularity
+        ring_score = 0.0
+        if n_samples >= 5 and n_comp >= 2:
+            proj_2d = projected[:, :2]
+            # Check if points form a ring: variance of distances from center should be low
+            dists_from_center = np.linalg.norm(proj_2d, axis=1)
+            if dists_from_center.mean() > 1e-10:
+                ring_score = 1.0 - (dists_from_center.std() / dists_from_center.mean())
+                ring_score = max(0, ring_score)
+
+        # Check for torus: project onto first 3 PCs and check 2D manifold structure
+        torus_score = 0.0
+        if n_samples >= 8 and n_comp >= 3:
+            proj_3d = projected[:, :3]
+            # Simple heuristic: if 2 PCs explain most variance and they're comparable
+            if explained_variance[0] > 0 and explained_variance[1] > 0:
+                balance = min(explained_variance[0], explained_variance[1]) / max(explained_variance[0], explained_variance[1])
+                torus_score = balance * (1.0 - explained_variance[2] / explained_variance[1]) if explained_variance[1] > 0 else 0
+
+        return {
+            "group_name": group_name,
+            "classification": classification,
+            "confidence": float(confidence),
+            "n_samples": n_samples,
+            "relative_spread": float(relative_spread),
+            "mean_distance_to_centroid": float(mean_distance_to_centroid),
+            "max_distance_to_centroid": float(max_distance_to_centroid),
+            "centroid_norm": float(centroid_norm),
+            "total_variance": float(total_variance),
+            "explained_variance_ratios": explained_variance.tolist(),
+            "cumulative_variance": cumulative_variance.tolist(),
+            "dims_for_90_pct": dims_for_90,
+            "dims_for_95_pct": dims_for_95,
+            "eigenvalue_ratio_1_2": float(ratio_1_2),
+            "eigenvalue_ratio_2_3": float(ratio_2_3),
+            "ring_score": float(ring_score),
+            "torus_score": float(torus_score),
+            "pca_projected_2d": projected[:, :2].tolist() if n_comp >= 2 else None,
+            "pca_projected_3d": projected[:, :3].tolist() if n_comp >= 3 else None,
+        }
+
+
+# =============================================================================
+# CSV Data Saver (with UTF-8 fix and next-token display)
 # =============================================================================
 
 class RawDataSaver:
-    """Saves all residual stream data as CSV files in a structured directory layout."""
+    """Saves all residual stream data as CSV files with proper UTF-8 encoding."""
 
     def __init__(self, output_dir: Path):
         self.output_dir = output_dir
@@ -295,11 +537,13 @@ class RawDataSaver:
 
                 df = pd.DataFrame(stream, columns=columns)
                 df.insert(0, "token_pos", range(len(df)))
-                df.insert(1, "token", result["tokens"][:len(df)] if len(result["tokens"]) >= len(df) else result["tokens"] + [""] * (len(df) - len(result["tokens"])))
+                tokens_list = result["tokens"][:len(df)] if len(result["tokens"]) >= len(df) else result["tokens"] + [""] * (len(df) - len(result["tokens"]))
+                df.insert(1, "token", tokens_list)
 
-                df.to_csv(layer_dir / f"prompt_{prompt_idx:03d}.csv", index=False)
+                # UTF-8 encoding explicitly
+                df.to_csv(layer_dir / f"prompt_{prompt_idx:03d}.csv", index=False, encoding="utf-8")
 
-        # --- 2. Final token streams: group/final_token_streams/layer_XXX.csv ---
+        # --- 2. Final token streams with NEXT TOKEN info ---
         final_dir = group_dir / "final_token_streams"
         final_dir.mkdir(exist_ok=True)
 
@@ -312,9 +556,15 @@ class RawDataSaver:
             df = pd.DataFrame(streams, columns=dim_columns)
             df.insert(0, "prompt_idx", range(len(results)))
             df.insert(1, "prompt", [r["prompt"] for r in results])
-            df.to_csv(final_dir / f"layer_{layer_idx:03d}.csv", index=False)
+            df.insert(2, "predicted_next_token", [r["predicted_token"] for r in results])
+            df.insert(3, "target_token", [group.target_token] * len(results))
+            df.insert(4, "top3_predictions", [
+                " | ".join([f"{t}({l:.1f})" for t, l in r["top_k_predictions"][:3]])
+                for r in results
+            ])
+            df.to_csv(final_dir / f"layer_{layer_idx:03d}.csv", index=False, encoding="utf-8")
 
-        # Combined CSV (all layers, all prompts)
+        # Combined CSV (all layers, all prompts) with next token
         all_rows = []
         for layer_idx in range(n_layers):
             for prompt_idx, result in enumerate(results):
@@ -322,16 +572,18 @@ class RawDataSaver:
                     "layer": layer_idx,
                     "prompt_idx": prompt_idx,
                     "prompt": result["prompt"],
-                    "predicted_token": result["predicted_token"],
+                    "predicted_next_token": result["predicted_token"],
+                    "target_token": group.target_token,
+                    "top3": " | ".join([f"{t}({l:.1f})" for t, l in result["top_k_predictions"][:3]]),
                 }
                 for d in range(d_model):
                     row[f"dim_{d:04d}"] = result["final_token_streams"][layer_idx][d]
                 all_rows.append(row)
 
         df_all = pd.DataFrame(all_rows)
-        df_all.to_csv(final_dir / "all_layers_all_prompts.csv", index=False)
+        df_all.to_csv(final_dir / "all_layers_all_prompts.csv", index=False, encoding="utf-8")
 
-        # --- 3. Centroids: group/centroids/centroids_all_layers.csv ---
+        # --- 3. Centroids ---
         centroid_dir = group_dir / "centroids"
         centroid_dir.mkdir(exist_ok=True)
 
@@ -345,25 +597,26 @@ class RawDataSaver:
             centroid_rows.append(row)
 
         df_centroids = pd.DataFrame(centroid_rows)
-        df_centroids.to_csv(centroid_dir / "centroids_all_layers.csv", index=False)
+        df_centroids.to_csv(centroid_dir / "centroids_all_layers.csv", index=False, encoding="utf-8")
 
-        # --- 4. Prompts metadata ---
+        # --- 4. Prompts metadata with next token ---
         meta_rows = []
         for i, result in enumerate(results):
             meta_rows.append({
                 "prompt_idx": i,
                 "prompt": result["prompt"],
                 "target_token": group.target_token,
-                "predicted_token": result["predicted_token"],
+                "predicted_next_token": result["predicted_token"],
                 "target_match": group.target_token.lower() in result["predicted_token"].lower() or result["predicted_token"].lower() in group.target_token.lower(),
                 "n_tokens": len(result["tokens"]),
                 "tokens": " | ".join(result["tokens"]),
                 "top1_logit": result["top_k_predictions"][0][1],
                 "top3": str([(t, round(l, 2)) for t, l in result["top_k_predictions"][:3]]),
+                "top10": str([(t, round(l, 2)) for t, l in result["top_k_predictions"][:10]]),
             })
 
         df_meta = pd.DataFrame(meta_rows)
-        df_meta.to_csv(group_dir / "prompts_meta.csv", index=False)
+        df_meta.to_csv(group_dir / "prompts_meta.csv", index=False, encoding="utf-8")
 
         print(f"    Saved: {group_dir}/")
 
@@ -422,11 +675,11 @@ def compute_group_metrics(results: list[dict], group_name: str) -> dict:
 
 
 # =============================================================================
-# Visualization
+# Visualization (Enhanced with animations and geometry plots)
 # =============================================================================
 
 class AttractorVisualizer:
-    """Generates plots for attractor analysis."""
+    """Generates plots and animations for attractor analysis."""
 
     def __init__(self, output_dir: Path):
         self.viz_dir = output_dir / "visualizations"
@@ -505,30 +758,28 @@ class AttractorVisualizer:
         print(f"    Saved: {self.viz_dir}/cosine_similarity_heatmaps.png")
 
     def plot_pca_final_layer(self, all_results: dict[str, list[dict]]):
-        """PCA projection of final-layer residual streams, colored by group."""
-        from numpy.linalg import svd
-
+        """PCA projection of final-layer residual streams, colored by group, with next-token labels."""
         group_names = list(all_results.keys())
         n_layers = all_results[group_names[0]][0]["n_layers"]
         last_layer = n_layers - 1
 
-        # Collect all final-layer streams
         all_streams = []
         labels = []
+        predicted_tokens = []
         for group_name in group_names:
             for result in all_results[group_name]:
                 all_streams.append(result["final_token_streams"][last_layer])
                 labels.append(group_name)
+                predicted_tokens.append(result["predicted_token"])
 
-        X = np.stack(all_streams)  # (total_prompts, d_model)
+        X = np.stack(all_streams)
         X_centered = X - X.mean(axis=0)
 
-        # PCA via SVD
-        U, S, Vt = svd(X_centered, full_matrices=False)
-        X_pca = X_centered @ Vt[:2].T  # project onto first 2 PCs
+        pca = PCA(n_components=3)
+        X_pca = pca.fit_transform(X_centered)
 
-        # Plot
-        fig, ax = plt.subplots(1, 1, figsize=(12, 9))
+        # 2D plot with token labels
+        fig, ax = plt.subplots(1, 1, figsize=(14, 10))
         colors = plt.cm.tab10(np.linspace(0, 1, len(group_names)))
 
         offset = 0
@@ -537,6 +788,13 @@ class AttractorVisualizer:
             ax.scatter(X_pca[offset:offset+n, 0], X_pca[offset:offset+n, 1],
                       c=[colors[i]], label=group_name, s=60, alpha=0.8, edgecolors="k", linewidths=0.5)
 
+            # Annotate with predicted next token
+            for j in range(n):
+                ax.annotate(predicted_tokens[offset + j],
+                           (X_pca[offset + j, 0], X_pca[offset + j, 1]),
+                           fontsize=6, alpha=0.7, ha="center", va="bottom",
+                           xytext=(0, 5), textcoords="offset points")
+
             # Draw centroid
             centroid = X_pca[offset:offset+n].mean(axis=0)
             ax.scatter(centroid[0], centroid[1], c=[colors[i]], s=200, marker="*",
@@ -544,9 +802,9 @@ class AttractorVisualizer:
 
             offset += n
 
-        ax.set_xlabel(f"PC1 (var explained: {S[0]**2 / (S**2).sum():.1%})")
-        ax.set_ylabel(f"PC2 (var explained: {S[1]**2 / (S**2).sum():.1%})")
-        ax.set_title(f"PCA of Final-Layer (L{last_layer}) Residual Streams\n(stars = group centroids)")
+        ax.set_xlabel(f"PC1 ({pca.explained_variance_ratio_[0]:.1%} var)")
+        ax.set_ylabel(f"PC2 ({pca.explained_variance_ratio_[1]:.1%} var)")
+        ax.set_title(f"PCA of Final-Layer (L{last_layer}) Residual Streams\n(labels = predicted next token, stars = centroids)")
         ax.legend(loc="best", fontsize=8)
         ax.grid(True, alpha=0.3)
 
@@ -555,13 +813,56 @@ class AttractorVisualizer:
         plt.close()
         print(f"    Saved: {self.viz_dir}/pca_final_layer.png")
 
+    def plot_pca_3d_final_layer(self, all_results: dict[str, list[dict]]):
+        """3D PCA projection for geometry inspection."""
+        group_names = list(all_results.keys())
+        n_layers = all_results[group_names[0]][0]["n_layers"]
+        last_layer = n_layers - 1
+
+        all_streams = []
+        labels = []
+        for group_name in group_names:
+            for result in all_results[group_name]:
+                all_streams.append(result["final_token_streams"][last_layer])
+                labels.append(group_name)
+
+        X = np.stack(all_streams)
+        X_centered = X - X.mean(axis=0)
+
+        pca = PCA(n_components=3)
+        X_pca = pca.fit_transform(X_centered)
+
+        fig = plt.figure(figsize=(14, 10))
+        ax = fig.add_subplot(111, projection='3d')
+        colors = plt.cm.tab10(np.linspace(0, 1, len(group_names)))
+
+        offset = 0
+        for i, group_name in enumerate(group_names):
+            n = len(all_results[group_name])
+            ax.scatter(X_pca[offset:offset+n, 0], X_pca[offset:offset+n, 1], X_pca[offset:offset+n, 2],
+                      c=[colors[i]], label=group_name, s=60, alpha=0.8, edgecolors="k", linewidths=0.3)
+            centroid = X_pca[offset:offset+n].mean(axis=0)
+            ax.scatter(centroid[0], centroid[1], centroid[2], c=[colors[i]], s=200, marker="*",
+                      edgecolors="k", linewidths=1.5)
+            offset += n
+
+        ax.set_xlabel(f"PC1 ({pca.explained_variance_ratio_[0]:.1%})")
+        ax.set_ylabel(f"PC2 ({pca.explained_variance_ratio_[1]:.1%})")
+        ax.set_zlabel(f"PC3 ({pca.explained_variance_ratio_[2]:.1%})")
+        ax.set_title("3D PCA of Final-Layer Residual Streams")
+        ax.legend(loc="best", fontsize=7)
+
+        plt.tight_layout()
+        plt.savefig(self.viz_dir / "pca_3d_final_layer.png", dpi=150, bbox_inches="tight")
+        plt.close()
+        print(f"    Saved: {self.viz_dir}/pca_3d_final_layer.png")
+
     def plot_cross_group_distances(self, all_results: dict[str, list[dict]]):
         """Bar chart of between-group vs within-group distances at final layer."""
         group_names = list(all_results.keys())
         n_layers = all_results[group_names[0]][0]["n_layers"]
         last_layer = n_layers - 1
 
-        # Within-group mean distances
         within_distances = {}
         centroids = {}
         for name in group_names:
@@ -571,7 +872,6 @@ class AttractorVisualizer:
             dists = np.linalg.norm(streams - centroid[None, :], axis=1)
             within_distances[name] = float(dists.mean())
 
-        # Between-group distances
         between_distances = {}
         for i in range(len(group_names)):
             for j in range(i + 1, len(group_names)):
@@ -581,16 +881,14 @@ class AttractorVisualizer:
 
         fig, axes = plt.subplots(1, 2, figsize=(16, 6))
 
-        # Within-group
-        bars = axes[0].bar(range(len(within_distances)), list(within_distances.values()), color="steelblue")
+        axes[0].bar(range(len(within_distances)), list(within_distances.values()), color="steelblue")
         axes[0].set_xticks(range(len(within_distances)))
         axes[0].set_xticklabels(list(within_distances.keys()), rotation=45, ha="right", fontsize=8)
         axes[0].set_ylabel("Mean L2 Distance to Centroid")
         axes[0].set_title("Within-Group Distances (should be SMALL)")
         axes[0].grid(True, alpha=0.3, axis="y")
 
-        # Between-group
-        bars = axes[1].bar(range(len(between_distances)), list(between_distances.values()), color="coral")
+        axes[1].bar(range(len(between_distances)), list(between_distances.values()), color="coral")
         axes[1].set_xticks(range(len(between_distances)))
         axes[1].set_xticklabels(list(between_distances.keys()), rotation=45, ha="right", fontsize=7)
         axes[1].set_ylabel("L2 Distance Between Centroids")
@@ -604,31 +902,23 @@ class AttractorVisualizer:
 
     def plot_layer_trajectory_pca(self, all_results: dict[str, list[dict]], selected_groups: list[str] = None):
         """Show how points move through PCA space from early to late layers."""
-        from numpy.linalg import svd
-
-        group_names = selected_groups or list(all_results.keys())[:3]  # Limit for readability
+        group_names = selected_groups or list(all_results.keys())[:4]
         n_layers = all_results[group_names[0]][0]["n_layers"]
 
-        # Collect streams at multiple layers for selected groups
-        # We'll do PCA on the combined final-layer space, then show trajectories
         all_streams_final = []
-        all_labels = []
         for name in group_names:
             for result in all_results[name]:
                 all_streams_final.append(result["final_token_streams"][n_layers - 1])
-                all_labels.append(name)
 
         X_final = np.stack(all_streams_final)
-        X_centered = X_final - X_final.mean(axis=0)
-        U, S, Vt = svd(X_centered, full_matrices=False)
-        # Use the PCA basis from the final layer to project all layers
-        pca_basis = Vt[:2]  # (2, d_model)
+        mean_vec = X_final.mean(axis=0)
 
-        # Now plot trajectories: for each prompt, project its residual stream at each layer
+        pca = PCA(n_components=2)
+        pca.fit(X_final - mean_vec)
+
         fig, ax = plt.subplots(1, 1, figsize=(14, 10))
         colors = plt.cm.tab10(np.linspace(0, 1, len(group_names)))
 
-        # Sample layers to show (not all, too cluttered)
         layer_samples = np.linspace(0, n_layers - 1, min(20, n_layers), dtype=int)
 
         for g_idx, name in enumerate(group_names):
@@ -637,32 +927,28 @@ class AttractorVisualizer:
                 trajectory = []
                 for l in layer_samples:
                     vec = result["final_token_streams"][l]
-                    projected = (vec - X_final.mean(axis=0)) @ pca_basis.T
+                    projected = pca.transform((vec - mean_vec).reshape(1, -1))[0]
                     trajectory.append(projected)
 
-                trajectory = np.array(trajectory)  # (n_layer_samples, 2)
+                trajectory = np.array(trajectory)
 
-                # Plot trajectory as a line with arrow
                 ax.plot(trajectory[:, 0], trajectory[:, 1],
                        color=colors[g_idx], alpha=0.3, linewidth=0.8)
-                # Mark start (early layer) with a small dot
                 ax.scatter(trajectory[0, 0], trajectory[0, 1],
                           color=colors[g_idx], s=15, alpha=0.4, marker="o")
-                # Mark end (final layer) with a larger dot
                 ax.scatter(trajectory[-1, 0], trajectory[-1, 1],
                           color=colors[g_idx], s=50, alpha=0.8, marker="o",
                           edgecolors="k", linewidths=0.5)
 
-            # Plot centroid at final layer
             final_streams = np.stack([r["final_token_streams"][n_layers - 1] for r in results])
             centroid = final_streams.mean(axis=0)
-            centroid_proj = (centroid - X_final.mean(axis=0)) @ pca_basis.T
+            centroid_proj = pca.transform((centroid - mean_vec).reshape(1, -1))[0]
             ax.scatter(centroid_proj[0], centroid_proj[1], color=colors[g_idx],
                       s=300, marker="*", edgecolors="k", linewidths=1.5, zorder=10,
-                      label=f"{name} (centroid)")
+                      label=f"{name}")
 
-        ax.set_xlabel(f"PC1")
-        ax.set_ylabel(f"PC2")
+        ax.set_xlabel("PC1")
+        ax.set_ylabel("PC2")
         ax.set_title("Layer Trajectories in PCA Space\n(small dots = early layers, large dots = final layer, stars = centroids)")
         ax.legend(loc="best", fontsize=8)
         ax.grid(True, alpha=0.3)
@@ -672,16 +958,280 @@ class AttractorVisualizer:
         plt.close()
         print(f"    Saved: {self.viz_dir}/layer_trajectories_pca.png")
 
-    def generate_all_plots(self, all_results: dict[str, list[dict]], all_metrics: dict[str, dict]):
+    def create_convergence_animation(self, all_results: dict[str, list[dict]], selected_groups: list[str] = None):
+        """Create animated GIF showing points converging to attractors across layers."""
+        group_names = selected_groups or list(all_results.keys())[:5]
+        n_layers = all_results[group_names[0]][0]["n_layers"]
+
+        # Collect all final-layer streams for PCA basis
+        all_streams_final = []
+        for name in group_names:
+            for result in all_results[name]:
+                all_streams_final.append(result["final_token_streams"][n_layers - 1])
+
+        X_final = np.stack(all_streams_final)
+        mean_vec = X_final.mean(axis=0)
+
+        pca = PCA(n_components=2)
+        pca.fit(X_final - mean_vec)
+
+        # Pre-compute all projections for all layers
+        all_projections = {}  # group_name -> (n_prompts, n_layers, 2)
+        for name in group_names:
+            results = all_results[name]
+            group_proj = np.zeros((len(results), n_layers, 2))
+            for p_idx, result in enumerate(results):
+                for l in range(n_layers):
+                    vec = result["final_token_streams"][l]
+                    group_proj[p_idx, l] = pca.transform((vec - mean_vec).reshape(1, -1))[0]
+            all_projections[name] = group_proj
+
+        # Compute axis limits
+        all_points = np.concatenate([proj.reshape(-1, 2) for proj in all_projections.values()])
+        x_min, x_max = all_points[:, 0].min(), all_points[:, 0].max()
+        y_min, y_max = all_points[:, 1].min(), all_points[:, 1].max()
+        margin = 0.1 * max(x_max - x_min, y_max - y_min)
+
+        # Create animation
+        fig, ax = plt.subplots(1, 1, figsize=(12, 9))
+        colors = plt.cm.tab10(np.linspace(0, 1, len(group_names)))
+
+        def animate(frame):
+            ax.clear()
+            layer_idx = frame
+
+            for g_idx, name in enumerate(group_names):
+                proj = all_projections[name]  # (n_prompts, n_layers, 2)
+                points = proj[:, layer_idx, :]  # (n_prompts, 2)
+
+                ax.scatter(points[:, 0], points[:, 1],
+                          c=[colors[g_idx]], s=60, alpha=0.8,
+                          edgecolors="k", linewidths=0.5, label=name)
+
+                # Draw centroid
+                centroid = points.mean(axis=0)
+                ax.scatter(centroid[0], centroid[1], c=[colors[g_idx]], s=200, marker="*",
+                          edgecolors="k", linewidths=1.5, zorder=10)
+
+                # Draw trails (last 5 layers)
+                if layer_idx > 0:
+                    trail_start = max(0, layer_idx - 5)
+                    for p_idx in range(len(proj)):
+                        trail = proj[p_idx, trail_start:layer_idx+1, :]
+                        ax.plot(trail[:, 0], trail[:, 1],
+                               color=colors[g_idx], alpha=0.2, linewidth=0.8)
+
+            ax.set_xlim(x_min - margin, x_max + margin)
+            ax.set_ylim(y_min - margin, y_max + margin)
+            ax.set_xlabel("PC1")
+            ax.set_ylabel("PC2")
+            ax.set_title(f"Residual Stream Dynamics — Layer {layer_idx}/{n_layers-1}\n"
+                        f"(Points converging to attractors)")
+            ax.legend(loc="upper right", fontsize=7)
+            ax.grid(True, alpha=0.3)
+
+            # Progress bar in plot
+            progress = layer_idx / (n_layers - 1)
+            ax.axhline(y=y_min - margin * 0.5, xmin=0, xmax=progress,
+                      color="green", linewidth=3, alpha=0.7)
+
+        # Use every layer or subsample if too many
+        if n_layers > 60:
+            frame_indices = np.linspace(0, n_layers - 1, 60, dtype=int)
+        else:
+            frame_indices = list(range(n_layers))
+
+        anim = FuncAnimation(fig, animate, frames=frame_indices, interval=200, blit=False)
+
+        gif_path = self.viz_dir / "convergence_animation.gif"
+        anim.save(str(gif_path), writer=PillowWriter(fps=5))
+        plt.close()
+        print(f"    Saved: {gif_path}")
+
+    def plot_attractor_geometry(self, geometry_results: list[dict]):
+        """Plot attractor geometry analysis results."""
+        fig = plt.figure(figsize=(18, 12))
+        gs = GridSpec(2, 3, figure=fig)
+
+        # --- Panel 1: Classification summary ---
+        ax1 = fig.add_subplot(gs[0, 0])
+        names = [g["group_name"] for g in geometry_results]
+        classifications = [g["classification"] for g in geometry_results]
+        confidences = [g.get("confidence", 0) for g in geometry_results]
+
+        color_map = {"point": "blue", "ring": "orange", "torus": "red",
+                    "cloud": "gray", "low_dim_manifold": "purple", "insufficient_data": "white"}
+        bar_colors = [color_map.get(c, "gray") for c in classifications]
+
+        bars = ax1.barh(range(len(names)), confidences, color=bar_colors, edgecolor="k")
+        ax1.set_yticks(range(len(names)))
+        ax1.set_yticklabels(names, fontsize=7)
+        ax1.set_xlabel("Confidence")
+        ax1.set_title("Attractor Geometry Classification")
+
+        # Add classification text
+        for i, (cls, conf) in enumerate(zip(classifications, confidences)):
+            ax1.text(conf + 0.02, i, cls, va="center", fontsize=7)
+
+        ax1.set_xlim(0, 1.3)
+
+        # --- Panel 2: Eigenvalue spectra ---
+        ax2 = fig.add_subplot(gs[0, 1])
+        for g in geometry_results:
+            if "explained_variance_ratios" in g and g["explained_variance_ratios"]:
+                evr = g["explained_variance_ratios"]
+                ax2.plot(range(1, len(evr) + 1), evr, marker="o", markersize=4,
+                        label=g["group_name"], linewidth=1.5)
+
+        ax2.set_xlabel("Principal Component")
+        ax2.set_ylabel("Explained Variance Ratio")
+        ax2.set_title("PCA Eigenvalue Spectra")
+        ax2.legend(fontsize=6, loc="upper right")
+        ax2.grid(True, alpha=0.3)
+        ax2.set_yscale("log")
+
+        # --- Panel 3: Ring scores vs Torus scores ---
+        ax3 = fig.add_subplot(gs[0, 2])
+        ring_scores = [g.get("ring_score", 0) for g in geometry_results]
+        torus_scores = [g.get("torus_score", 0) for g in geometry_results]
+
+        ax3.scatter(ring_scores, torus_scores, s=80, c=bar_colors, edgecolors="k", zorder=5)
+        for i, name in enumerate(names):
+            ax3.annotate(name, (ring_scores[i], torus_scores[i]),
+                        fontsize=6, ha="center", va="bottom", xytext=(0, 5),
+                        textcoords="offset points")
+
+        ax3.set_xlabel("Ring Score")
+        ax3.set_ylabel("Torus Score")
+        ax3.set_title("Ring vs Torus Geometry Scores")
+        ax3.grid(True, alpha=0.3)
+        ax3.set_xlim(-0.1, 1.1)
+        ax3.set_ylim(-0.1, 1.1)
+
+        # --- Panel 4-6: 2D PCA projections for individual groups ---
+        interesting_groups = [g for g in geometry_results
+                            if g.get("pca_projected_2d") is not None and g["classification"] != "point"]
+        # Also include some point groups for comparison
+        point_groups = [g for g in geometry_results
+                       if g.get("pca_projected_2d") is not None and g["classification"] == "point"]
+
+        plot_groups = interesting_groups[:2] + point_groups[:1]
+        if not plot_groups:
+            plot_groups = [g for g in geometry_results if g.get("pca_projected_2d") is not None][:3]
+
+        for idx, g in enumerate(plot_groups[:3]):
+            ax = fig.add_subplot(gs[1, idx])
+            proj = np.array(g["pca_projected_2d"])
+            ax.scatter(proj[:, 0], proj[:, 1], s=50, alpha=0.8, edgecolors="k", linewidths=0.5)
+
+            # Draw circle for ring reference
+            if g["classification"] in ("ring", "torus"):
+                theta = np.linspace(0, 2 * np.pi, 100)
+                r = np.linalg.norm(proj, axis=1).mean()
+                ax.plot(r * np.cos(theta), r * np.sin(theta), "r--", alpha=0.4, linewidth=1)
+
+            ax.set_title(f"{g['group_name']}\n[{g['classification']}] (conf={g.get('confidence', 0):.2f})",
+                        fontsize=9)
+            ax.set_xlabel("PC1")
+            ax.set_ylabel("PC2")
+            ax.grid(True, alpha=0.3)
+            ax.set_aspect("equal")
+
+        plt.tight_layout()
+        plt.savefig(self.viz_dir / "attractor_geometry_analysis.png", dpi=150, bbox_inches="tight")
+        plt.close()
+        print(f"    Saved: {self.viz_dir}/attractor_geometry_analysis.png")
+
+    def plot_per_group_geometry_detail(self, all_results: dict[str, list[dict]], geometry_results: list[dict]):
+        """Detailed per-group geometry plots showing 2D and 3D structure."""
+        n_layers = list(all_results.values())[0][0]["n_layers"]
+        last_layer = n_layers - 1
+
+        for g_result in geometry_results:
+            name = g_result["group_name"]
+            if name not in all_results:
+                continue
+
+            results = all_results[name]
+            streams = np.stack([r["final_token_streams"][last_layer] for r in results])
+            predicted_tokens = [r["predicted_token"] for r in results]
+
+            if streams.shape[0] < 3:
+                continue
+
+            centered = streams - streams.mean(axis=0)
+            n_comp = min(3, streams.shape[0] - 1)
+            pca = PCA(n_components=n_comp)
+            projected = pca.fit_transform(centered)
+
+            fig = plt.figure(figsize=(16, 5))
+
+            # 2D scatter with token labels
+            ax1 = fig.add_subplot(131)
+            ax1.scatter(projected[:, 0], projected[:, 1], s=60, alpha=0.8, edgecolors="k", linewidths=0.5)
+            for i, tok in enumerate(predicted_tokens):
+                ax1.annotate(tok, (projected[i, 0], projected[i, 1]),
+                            fontsize=7, ha="center", va="bottom", xytext=(0, 4),
+                            textcoords="offset points")
+            ax1.set_xlabel(f"PC1 ({pca.explained_variance_ratio_[0]:.1%})")
+            ax1.set_ylabel(f"PC2 ({pca.explained_variance_ratio_[1]:.1%})")
+            ax1.set_title(f"{name} — 2D PCA\n[{g_result['classification']}]")
+            ax1.grid(True, alpha=0.3)
+            ax1.set_aspect("equal")
+
+            # 3D scatter if possible
+            if n_comp >= 3:
+                ax2 = fig.add_subplot(132, projection='3d')
+                ax2.scatter(projected[:, 0], projected[:, 1], projected[:, 2],
+                           s=60, alpha=0.8, edgecolors="k", linewidths=0.3)
+                ax2.set_xlabel(f"PC1")
+                ax2.set_ylabel(f"PC2")
+                ax2.set_zlabel(f"PC3")
+                ax2.set_title(f"{name} — 3D PCA")
+            else:
+                ax2 = fig.add_subplot(132)
+                ax2.text(0.5, 0.5, "Not enough\nsamples for 3D", ha="center", va="center", fontsize=12)
+                ax2.set_xlim(0, 1)
+                ax2.set_ylim(0, 1)
+
+            # Distance from centroid histogram
+            ax3 = fig.add_subplot(133)
+            dists = np.linalg.norm(centered, axis=1)
+            ax3.hist(dists, bins=max(5, len(dists) // 2), color="steelblue", edgecolor="k", alpha=0.7)
+            ax3.axvline(dists.mean(), color="red", linestyle="--", label=f"mean={dists.mean():.2f}")
+            ax3.set_xlabel("Distance from Centroid")
+            ax3.set_ylabel("Count")
+            ax3.set_title(f"Distance Distribution\nspread={g_result.get('relative_spread', 0):.4f}")
+            ax3.legend()
+
+            plt.tight_layout()
+            plt.savefig(self.viz_dir / f"geometry_detail_{name}.png", dpi=150, bbox_inches="tight")
+            plt.close()
+
+        print(f"    Saved: {self.viz_dir}/geometry_detail_*.png")
+
+    def generate_all_plots(self, all_results: dict[str, list[dict]], all_metrics: dict[str, dict],
+                          geometry_results: list[dict] = None):
         """Generate all visualization plots."""
         print("\n  Generating visualizations...")
         self.plot_convergence_trajectories(all_metrics)
         self.plot_cosine_heatmaps(all_results)
         self.plot_pca_final_layer(all_results)
+        self.plot_pca_3d_final_layer(all_results)
         self.plot_cross_group_distances(all_results)
         self.plot_layer_trajectory_pca(all_results)
+        self.create_convergence_animation(all_results)
+
+        if geometry_results:
+            self.plot_attractor_geometry(geometry_results)
+            self.plot_per_group_geometry_detail(all_results, geometry_results)
+
         print("  All visualizations complete.")
 
+
+# =============================================================================
+# Residual Stream Extractor
+# =============================================================================
 
 class ResidualStreamExtractor:
     def __init__(self, model, tokenizer, device: str = "cuda", max_tokens: Optional[int] = None):
@@ -728,10 +1278,7 @@ class ResidualStreamExtractor:
         self.hooks = []
 
     def extract(self, prompt: str) -> dict:
-        """Run prompt, capture full residual streams at all layers and positions.
-        
-        If max_tokens is set, the input is truncated to at most max_tokens tokens.
-        """
+        """Run prompt, capture full residual streams at all layers and positions."""
         self._register_hooks()
         try:
             inputs = self.tokenizer(prompt, return_tensors="pt")
@@ -781,10 +1328,14 @@ class ResidualStreamExtractor:
         finally:
             self._remove_hooks()
 
-def main():
-    parser = argparse.ArgumentParser(description="Residual Stream Attractor Extraction")
 
-    # --- NEU: Model-Preset statt direkter Model-ID als Default ---
+# =============================================================================
+# Main Entry Point
+# =============================================================================
+
+def main():
+    parser = argparse.ArgumentParser(description="Residual Stream Attractor Extraction v2")
+
     MODEL_PRESETS = {
         "deepseek": "deepseek-ai/deepseek-llm-7b-base",
         "gpt2": "gpt2",
@@ -812,8 +1363,8 @@ def main():
         help="Device: 'cuda', 'cpu', or 'auto' (default: auto)",
     )
     parser.add_argument(
-        "--output", type=str, default="attractor_data",
-        help="Output directory for saved data (default: attractor_data)",
+        "--output", type=str, default="attractor_data_v2",
+        help="Output directory for saved data (default: attractor_data_v2)",
     )
     parser.add_argument(
         "--groups", type=str, nargs="*", default=None,
@@ -826,25 +1377,23 @@ def main():
     )
     parser.add_argument(
         "--max-tokens", type=int, default=None,
-        help="Maximum number of tokens to process per prompt. Truncates input if exceeded. "
-             "Default: no limit (use full prompt length).",
+        help="Maximum number of tokens to process per prompt. Truncates input if exceeded.",
     )
 
     args = parser.parse_args()
 
-    # --- Resolve model ID from preset or direct override ---
+    # --- Resolve model ID ---
     if args.model is not None:
         model_id = args.model
     else:
         model_id = MODEL_PRESETS[args.model_preset]
 
-    # --- Auto-adjust dtype for small models without GPU ---
+    # --- Device ---
     if args.device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
     else:
         device = args.device
 
-    # GPT-2 and similar small models don't support float16 on CPU well
     if device == "cpu" and args.dtype == "float16":
         print(f"[INFO] Switching dtype from float16 to float32 for CPU execution.")
         args.dtype = "float32"
@@ -857,7 +1406,7 @@ def main():
     dtype = dtype_map[args.dtype]
 
     print(f"{'='*60}")
-    print(f"Residual Stream Attractor Extraction Tool")
+    print(f"Residual Stream Attractor Extraction Tool v2")
     print(f"{'='*60}")
     print(f"Model preset: {args.model_preset}")
     print(f"Model ID: {model_id}")
@@ -903,13 +1452,15 @@ def main():
     output_path = Path(args.output)
     saver = RawDataSaver(output_path)
     visualizer = AttractorVisualizer(output_path)
+    geometry_analyzer = AttractorGeometryAnalyzer(n_components=10)
 
     all_results = {}
     all_metrics = {}
+    geometry_results = []
 
     for group in groups:
         print(f"\n{'='*60}")
-        print(f"Processing: {group.name} (target: '{group.target_token}')")
+        print(f"Processing: {group.name} (target: '{group.target_token}', expected geometry: {group.expected_geometry})")
         print(f"{'='*60}")
 
         results = []
@@ -925,8 +1476,9 @@ def main():
             )
             result["target_match"] = target_match
 
-            match_str = "+" if target_match else "X"
-            print(f"  [{match_str}] '{prompt}' -> '{predicted}' (target: '{group.target_token}')")
+            match_str = "\u2713" if target_match else "\u2717"
+            top3_str = " | ".join([f"{t}({l:.1f})" for t, l in result["top_k_predictions"][:3]])
+            print(f"  [{match_str}] '{prompt}' -> '{predicted}' [top3: {top3_str}]")
             results.append(result)
 
         all_results[group.name] = results
@@ -941,7 +1493,22 @@ def main():
         print(f"    Cosine improvement: {conv['cosine_improvement']:.4f}")
         print(f"    Final layer cosine sim: {conv['cosine_trajectory'][-1]:.4f}")
 
-        # Save raw data as CSV
+        # Geometry analysis on final layer
+        last_layer = metrics["n_layers"] - 1
+        final_streams = np.stack([r["final_token_streams"][last_layer] for r in results])
+        geo_result = geometry_analyzer.analyze(final_streams, group_name=group.name)
+        geo_result["expected_geometry"] = group.expected_geometry
+        geometry_results.append(geo_result)
+
+        print(f"\n  Geometry analysis:")
+        print(f"    Classification: {geo_result['classification']} (expected: {group.expected_geometry})")
+        print(f"    Confidence: {geo_result.get('confidence', 0):.3f}")
+        print(f"    Relative spread: {geo_result.get('relative_spread', 0):.6f}")
+        print(f"    Ring score: {geo_result.get('ring_score', 0):.3f}")
+        print(f"    Torus score: {geo_result.get('torus_score', 0):.3f}")
+        print(f"    Dims for 90% variance: {geo_result.get('dims_for_90_pct', '?')}")
+
+        # Save raw data as CSV (UTF-8)
         saver.save_group(group, results)
 
         # Save metrics JSON
@@ -951,13 +1518,14 @@ def main():
             "n_prompts": metrics["n_prompts"],
             "n_layers": metrics["n_layers"],
             "convergence": metrics["convergence"],
+            "geometry": {k: v for k, v in geo_result.items() if k != "pca_projected_2d" and k != "pca_projected_3d"},
             "per_layer": {
                 str(l): {k: v for k, v in data.items()}
                 for l, data in metrics["per_layer"].items()
             },
         }
-        with open(group_dir / "metrics.json", "w") as f:
-            json.dump(metrics_save, f, indent=2)
+        with open(group_dir / "metrics.json", "w", encoding="utf-8") as f:
+            json.dump(metrics_save, f, indent=2, ensure_ascii=False)
 
     # Cross-group comparison
     if len(all_results) > 1:
@@ -986,11 +1554,27 @@ def main():
                 comparison["between_cosines"][key] = cos
                 print(f"  {key}: dist={d:.4f}, cos={cos:.4f}")
 
-        with open(output_path / "cross_group_comparison.json", "w") as f:
-            json.dump(comparison, f, indent=2)
+        with open(output_path / "cross_group_comparison.json", "w", encoding="utf-8") as f:
+            json.dump(comparison, f, indent=2, ensure_ascii=False)
 
-    # Generate visualizations
-    visualizer.generate_all_plots(all_results, all_metrics)
+    # Save geometry summary
+    geometry_summary = []
+    for g in geometry_results:
+        summary_entry = {k: v for k, v in g.items() if k not in ("pca_projected_2d", "pca_projected_3d")}
+        geometry_summary.append(summary_entry)
+
+    with open(output_path / "geometry_summary.json", "w", encoding="utf-8") as f:
+        json.dump(geometry_summary, f, indent=2, ensure_ascii=False)
+
+    print(f"\n  Geometry Summary:")
+    print(f"  {'Group':<30} {'Expected':<10} {'Classified':<15} {'Confidence':<10} {'Ring':<6} {'Torus':<6}")
+    print(f"  {'-'*77}")
+    for g in geometry_results:
+        print(f"  {g['group_name']:<30} {g.get('expected_geometry','?'):<10} {g['classification']:<15} "
+              f"{g.get('confidence',0):<10.3f} {g.get('ring_score',0):<6.3f} {g.get('torus_score',0):<6.3f}")
+
+    # Generate visualizations (including geometry and animation)
+    visualizer.generate_all_plots(all_results, all_metrics, geometry_results)
 
     # Summary
     print(f"\n{'='*60}")
@@ -999,14 +1583,24 @@ def main():
     print(f"Output directory: {output_path}/")
     print(f"")
     print(f"Structure:")
-    print(f"  {{group}}/raw_streams/layer_XXX/prompt_YYY.csv  <- full residual streams")
-    print(f"  {{group}}/final_token_streams/layer_XXX.csv     <- final-pos streams per prompt")
+    print(f"  {{group}}/raw_streams/layer_XXX/prompt_YYY.csv  <- full residual streams (UTF-8)")
+    print(f"  {{group}}/final_token_streams/layer_XXX.csv     <- final-pos streams + next token")
     print(f"  {{group}}/final_token_streams/all_layers_all_prompts.csv")
     print(f"  {{group}}/centroids/centroids_all_layers.csv")
-    print(f"  {{group}}/prompts_meta.csv")
-    print(f"  {{group}}/metrics.json")
-    print(f"  visualizations/*.png")
+    print(f"  {{group}}/prompts_meta.csv                      <- includes predicted next token + top10")
+    print(f"  {{group}}/metrics.json                          <- includes geometry classification")
+    print(f"  visualizations/convergence_trajectories.png")
+    print(f"  visualizations/cosine_similarity_heatmaps.png")
+    print(f"  visualizations/pca_final_layer.png              <- with next-token labels")
+    print(f"  visualizations/pca_3d_final_layer.png")
+    print(f"  visualizations/cross_group_distances.png")
+    print(f"  visualizations/layer_trajectories_pca.png")
+    print(f"  visualizations/convergence_animation.gif        <- animated attractor convergence")
+    print(f"  visualizations/attractor_geometry_analysis.png  <- geometry classification")
+    print(f"  visualizations/geometry_detail_{{group}}.png     <- per-group geometry detail")
+    print(f"  geometry_summary.json")
     print(f"  cross_group_comparison.json")
+
 
 if __name__ == "__main__":
     main()
