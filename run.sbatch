@@ -7,7 +7,6 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mem=64G
 #SBATCH --cpus-per-task=6
-#SBATCH --partition=gpu
 
 # ============================================================================
 # Residual Stream Attractor Extraction — SLURM Batch Job
