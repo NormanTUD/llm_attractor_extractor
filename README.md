@@ -119,25 +119,25 @@ On CPU with float32 (slow, but no GPU required):
 ## Loading and Analyzing Data
 
 ```python
-    import numpy as np
-    import json
+import numpy as np
+import json
 
-    # Load residual streams for a single prompt
-    streams = np.load("attractor_data/paris_multilingual/prompt_000_final_token_streams.npy")
-    # Shape: (n_layers, d_model) — residual stream at final token position per layer
+# Load residual streams for a single prompt
+streams = np.load("attractor_data/paris_multilingual/prompt_000_final_token_streams.npy")
+# Shape: (n_layers, d_model) — residual stream at final token position per layer
 
-    # Load centroid (= attractor candidate) per layer
-    centroids = np.load("attractor_data/paris_multilingual/centroids_per_layer.npy")
-    # Shape: (n_layers, d_model)
+# Load centroid (= attractor candidate) per layer
+centroids = np.load("attractor_data/paris_multilingual/centroids_per_layer.npy")
+# Shape: (n_layers, d_model)
 
-    # Load convergence metrics
-    with open("attractor_data/paris_multilingual/metrics.json") as f:
-        metrics = json.load(f)
+# Load convergence metrics
+with open("attractor_data/paris_multilingual/metrics.json") as f:
+    metrics = json.load(f)
 
-    # Inspect convergence trajectory
-    print("Cosine similarity trajectory (should increase in later layers):")
-    for i, cos_sim in enumerate(metrics["convergence"]["cosine_trajectory"]):
-        print(f"  Layer {i:3d}: {cos_sim:.4f}")
+# Inspect convergence trajectory
+print("Cosine similarity trajectory (should increase in later layers):")
+for i, cos_sim in enumerate(metrics["convergence"]["cosine_trajectory"]):
+    print(f"  Layer {i:3d}: {cos_sim:.4f}")
 ```
 
 ## Convergence Metrics
