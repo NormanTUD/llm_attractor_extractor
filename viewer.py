@@ -9,22 +9,30 @@
 Interactive Residual Stream Trajectory Viewer (3D)
 
 Shows full trajectories (all layers) as 3D paths with directional arrows.
-Use arrow keys to cycle through dimension triplets.
+Each axis dimension is independently controllable.
 
 Controls:
-    Left/Right Arrow  — cycle through dimension triplets
-    Up/Down Arrow     — change which dim is on Z axis (rotate triplet)
-    Space             — play/pause animation through layers
-    1-9               — highlight specific trajectory
-    0                 — clear highlight
-    C                 — toggle centroids
-    F                 — find best dims (auto-detect convergence dims)
-    R                 — reset
-    P                 — save current frame as PNG
+    Left/Right    — change X-axis dimension (sorted by index)
+    Up/Down       — change Y-axis dimension (sorted by index)
+    Page Up/Down  — change Z-axis dimension (sorted by index)
+    Shift+←/→    — jump X dim by 10
+    Shift+↑/↓    — jump Y dim by 10
+
+    F             — switch to convergence-ranked dims
+    V             — switch to variance-ranked dims
+    N             — switch to sequential dims (0,1,2,3,...)
+    
+    1-9           — highlight specific trajectory
+    0             — clear highlight
+    C             — toggle centroids
+    T             — toggle token labels
+    A             — toggle arrows
+    R             — reset
+    P             — save current frame as PNG
     Q / Escape / Ctrl+C — quit
 
-    Mouse drag        — trackball rotation (natural)
-    Scroll            — zoom
+    Mouse drag    — trackball rotation (natural)
+    Scroll        — zoom
 
 Usage:
     python3 residual_attractors.py attractor_data/berlin_multilingual
@@ -65,7 +73,7 @@ def _ensure_uv_run():
 _ensure_uv_run()
 
 # =============================================================================
-# Force Ctrl+C to kill immediately, regardless of window focus
+# Force Ctrl+C to kill immediately
 # =============================================================================
 signal.signal(signal.SIGINT, lambda *_: os._exit(0))
 
@@ -178,7 +186,6 @@ class TrajectoryData:
         import csv
         layer_files = sorted(final_dir.glob("layer_*.csv"))
         if not layer_files:
-            print(f"  WARNING: No layer CSVs in {final_dir}")
             return
 
         print(f"  Loading {group_name} from {len(layer_files)} layer CSVs...")
@@ -219,16 +226,21 @@ class TrajectoryData:
                 result.append((name, i, traj))
         return result
 
-    def find_interesting_dims(self, top_k: int = 30) -> list[int]:
+    def get_variance_ranked_dims(self, top_k: int = None) -> list[int]:
+        """All dims sorted by final-layer variance (descending)."""
         all_final = []
         for trajs in self.trajectories.values():
             for traj in trajs:
                 all_final.append(traj[-1])
         X = np.stack(all_final)
         variances = X.var(axis=0)
-        return np.argsort(variances)[::-1][:top_k].tolist()
+        ranked = np.argsort(variances)[::-1]
+        if top_k:
+            return ranked[:top_k].tolist()
+        return ranked.tolist()
 
-    def find_convergence_dims(self, top_k: int = 30) -> list[int]:
+    def get_convergence_ranked_dims(self, top_k: int = None) -> list[int]:
+        """All dims sorted by convergence ratio (descending)."""
         all_first = []
         all_last = []
         for trajs in self.trajectories.values():
@@ -238,21 +250,18 @@ class TrajectoryData:
         var_first = np.stack(all_first).var(axis=0)
         var_last = np.stack(all_last).var(axis=0)
         ratio = var_first / (var_last + 1e-10)
-        return np.argsort(ratio)[::-1][:top_k].tolist()
+        ranked = np.argsort(ratio)[::-1]
+        if top_k:
+            return ranked[:top_k].tolist()
+        return ranked.tolist()
 
 
 # =============================================================================
-# Trackball-style 3D rotation (natural mouse interaction)
+# Trackball rotation
 # =============================================================================
 
 class Trackball:
-    """
-    Replaces matplotlib's default 3D mouse rotation with a more natural
-    trackball-style interaction:
-    - Horizontal drag rotates around the vertical (Z) axis
-    - Vertical drag rotates around the horizontal axis
-    - Movement is proportional and in the expected direction
-    """
+    """Natural trackball-style 3D rotation replacing matplotlib's default."""
 
     def __init__(self, ax, fig):
         self.ax = ax
@@ -261,11 +270,9 @@ class Trackball:
         self._last_x = 0
         self._last_y = 0
 
-        # Disable matplotlib's built-in 3D mouse rotation
-        # by disconnecting its button_press/release/motion handlers
+        # Disable matplotlib's built-in rotation
         self.ax.disable_mouse_rotation()
 
-        # Connect our own handlers
         self._cid_press = fig.canvas.mpl_connect('button_press_event', self._on_press)
         self._cid_release = fig.canvas.mpl_connect('button_release_event', self._on_release)
         self._cid_motion = fig.canvas.mpl_connect('motion_notify_event', self._on_motion)
@@ -274,7 +281,7 @@ class Trackball:
     def _on_press(self, event):
         if event.inaxes != self.ax:
             return
-        if event.button == 1:  # Left click
+        if event.button == 1:
             self._dragging = True
             self._last_x = event.x
             self._last_y = event.y
@@ -284,9 +291,7 @@ class Trackball:
             self._dragging = False
 
     def _on_motion(self, event):
-        if not self._dragging:
-            return
-        if event.x is None or event.y is None:
+        if not self._dragging or event.x is None or event.y is None:
             return
 
         dx = event.x - self._last_x
@@ -294,26 +299,18 @@ class Trackball:
         self._last_x = event.x
         self._last_y = event.y
 
-        # Sensitivity
-        sensitivity = 0.5
-
-        # Horizontal mouse movement -> azimuth rotation (natural: drag right = rotate right)
+        sensitivity = 0.4
         azim = self.ax.azim - dx * sensitivity
-        # Vertical mouse movement -> elevation (natural: drag up = look up)
         elev = self.ax.elev + dy * sensitivity
-
-        # Clamp elevation to avoid flipping
         elev = max(-90, min(90, elev))
 
         self.ax.view_init(elev=elev, azim=azim)
         self.fig.canvas.draw_idle()
 
     def _on_scroll(self, event):
-        """Zoom with scroll wheel."""
         if event.inaxes != self.ax:
             return
-        # Get current axis limits
-        factor = 0.9 if event.button == 'up' else 1.1
+        factor = 0.85 if event.button == 'up' else 1.15
 
         for getter, setter in [(self.ax.get_xlim, self.ax.set_xlim),
                                (self.ax.get_ylim, self.ax.set_ylim),
@@ -327,40 +324,52 @@ class Trackball:
 
 
 # =============================================================================
-# 3D Interactive Viewer
+# 3D Viewer
 # =============================================================================
 
 class Viewer3D:
-    """3D viewer: shows full trajectories with arrows. Arrow keys cycle dims."""
+    """
+    3D viewer with independently controllable axis dimensions.
+    
+    Each axis (X, Y, Z) has its own dimension index that you step through
+    sequentially. The dim list can be sorted by:
+      - index (sequential: 0, 1, 2, 3, ...)
+      - variance (most informative first)
+      - convergence (most attractor-like first)
+    """
 
     def __init__(self, data: TrajectoryData, initial_dims: list[int] = None):
         self.data = data
         self.n_layers = data.n_layers
         self.d_model = data.d_model
 
+        # Dimension ordering modes
+        self.dim_orders = {
+            'sequential': list(range(data.d_model)),
+            'variance': data.get_variance_ranked_dims(),
+            'convergence': data.get_convergence_ranked_dims(),
+        }
+        self.current_order_name = 'variance'
+        self.dim_order = self.dim_orders[self.current_order_name]
+
+        # Current position in the dim_order list for each axis
+        if initial_dims and len(initial_dims) >= 3:
+            # Find positions in current order
+            self.axis_pos = [0, 1, 2]
+            for i, d in enumerate(initial_dims[:3]):
+                if d in self.dim_order:
+                    self.axis_pos[i] = self.dim_order.index(d)
+                else:
+                    self.axis_pos[i] = i
+        else:
+            self.axis_pos = [0, 1, 2]  # positions into dim_order
+
         # State
         self.show_centroids = True
+        self.show_arrows = True
+        self.show_labels = True
         self.highlighted_idx = None
-        self.arrow_step = max(1, data.n_layers // 10)  # Show ~10 arrows per trajectory
-
-        # Build ALL dimension triplet combinations from interesting dims
-        interesting = data.find_interesting_dims(top_k=15)
-        self.dim_combos = []
-        # Generate all unique triplets (combinations, not permutations — order matters for axes)
-        from itertools import combinations
-        for combo in combinations(interesting[:15], 3):
-            self.dim_combos.append(list(combo))
-        if not self.dim_combos:
-            self.dim_combos = [[0, 1, 2]]
-
-        if initial_dims and len(initial_dims) >= 3:
-            self.dims = initial_dims[:3]
-            if self.dims not in self.dim_combos:
-                self.dim_combos.insert(0, self.dims)
-            self.combo_idx = self.dim_combos.index(self.dims)
-        else:
-            self.combo_idx = 0
-            self.dims = self.dim_combos[0]
+        self.arrow_step = max(1, data.n_layers // 8)
 
         # Colors
         group_names = list(data.trajectories.keys())
@@ -369,98 +378,136 @@ class Viewer3D:
         for i, name in enumerate(group_names):
             self.group_colors[name] = cmap(i % 10)
 
-        # Flat trajectory list
         self.flat_trajs = data.get_all_trajectories()
 
-        # Build figure
         self._build()
+
+    @property
+    def dims(self) -> list[int]:
+        """Current actual dimension indices for X, Y, Z."""
+        return [self.dim_order[p % len(self.dim_order)] for p in self.axis_pos]
 
     def _build(self):
         self.fig = plt.figure(figsize=(15, 10))
         self.fig.canvas.manager.set_window_title(
-            "Residual Stream 3D Viewer — Arrow keys to cycle dims"
+            "Residual Stream 3D — ←→ X dim, ↑↓ Y dim, PgUp/Dn Z dim"
         )
 
         self.ax = self.fig.add_subplot(111, projection='3d')
-
-        # Install trackball rotation
         self.trackball = Trackball(self.ax, self.fig)
 
-        # Connect keyboard
         self.fig.canvas.mpl_connect('key_press_event', self._on_key)
         self.fig.canvas.mpl_connect('close_event', lambda _: os._exit(0))
 
         self._draw()
 
+    def _step_axis(self, axis_idx: int, delta: int):
+        """Step one axis dimension by delta positions in the current ordering."""
+        self.axis_pos[axis_idx] = (self.axis_pos[axis_idx] + delta) % len(self.dim_order)
+        # Avoid duplicates: if we landed on a dim already used by another axis, skip
+        used = set()
+        for i in range(3):
+            if i != axis_idx:
+                used.add(self.axis_pos[i] % len(self.dim_order))
+        while self.axis_pos[axis_idx] % len(self.dim_order) in used:
+            self.axis_pos[axis_idx] = (self.axis_pos[axis_idx] + (1 if delta > 0 else -1)) % len(self.dim_order)
+
     def _on_key(self, event):
+        redraw = True
+
         if event.key == 'right':
-            self.combo_idx = (self.combo_idx + 1) % len(self.dim_combos)
-            self.dims = self.dim_combos[self.combo_idx]
-            self._draw()
+            self._step_axis(0, 1)  # X dim +1
         elif event.key == 'left':
-            self.combo_idx = (self.combo_idx - 1) % len(self.dim_combos)
-            self.dims = self.dim_combos[self.combo_idx]
-            self._draw()
+            self._step_axis(0, -1)  # X dim -1
         elif event.key == 'up':
-            # Rotate the triplet: [a,b,c] -> [b,c,a]
-            self.dims = [self.dims[1], self.dims[2], self.dims[0]]
-            # Update in combos list
-            self.dim_combos[self.combo_idx] = self.dims
-            self._draw()
+            self._step_axis(1, 1)  # Y dim +1
         elif event.key == 'down':
-            # Rotate the triplet: [a,b,c] -> [c,a,b]
-            self.dims = [self.dims[2], self.dims[0], self.dims[1]]
-            self.dim_combos[self.combo_idx] = self.dims
-            self._draw()
+            self._step_axis(1, -1)  # Y dim -1
+        elif event.key == 'pageup':
+            self._step_axis(2, 1)  # Z dim +1
+        elif event.key == 'pagedown':
+            self._step_axis(2, -1)  # Z dim -1
+        # Shift variants: jump by 10
+        elif event.key == 'shift+right':
+            self._step_axis(0, 10)
+        elif event.key == 'shift+left':
+            self._step_axis(0, -10)
+        elif event.key == 'shift+up':
+            self._step_axis(1, 10)
+        elif event.key == 'shift+down':
+            self._step_axis(1, -10)
+        elif event.key == 'shift+pageup' or event.key == 'ctrl+pageup':
+            self._step_axis(2, 10)
+        elif event.key == 'shift+pagedown' or event.key == 'ctrl+pagedown':
+            self._step_axis(2, -10)
+        # Ordering modes
+        elif event.key == 'n':
+            self._switch_order('sequential')
+        elif event.key == 'v':
+            self._switch_order('variance')
+        elif event.key == 'f':
+            self._switch_order('convergence')
+        # Toggles
         elif event.key == 'c':
             self.show_centroids = not self.show_centroids
-            self._draw()
-        elif event.key == 'f':
-            from itertools import combinations
-            conv_dims = self.data.find_convergence_dims(top_k=15)
-            self.dim_combos = []
-            for combo in combinations(conv_dims[:15], 3):
-                self.dim_combos.append(list(combo))
-            self.combo_idx = 0
-            self.dims = self.dim_combos[0]
-            print(f"  Switched to convergence dims. {len(self.dim_combos)} combos available.")
-            print(f"  Starting with: {self.dims}")
-            self._draw()
+        elif event.key == 'a':
+            self.show_arrows = not self.show_arrows
+        elif event.key == 't':
+            self.show_labels = not self.show_labels
         elif event.key == 'r':
-            self.combo_idx = 0
-            self.dims = self.dim_combos[0]
+            self.axis_pos = [0, 1, 2]
             self.highlighted_idx = None
-            self._draw()
         elif event.key == 'p':
-            fname = f"frame_d{self.dims[0]}_{self.dims[1]}_{self.dims[2]}.png"
+            d = self.dims
+            fname = f"frame_d{d[0]}_{d[1]}_{d[2]}.png"
             self.fig.savefig(fname, dpi=150, bbox_inches="tight")
             print(f"  Saved: {fname}")
+            redraw = False
         elif event.key in '123456789':
             idx = int(event.key) - 1
             if idx < len(self.flat_trajs):
                 self.highlighted_idx = idx
                 gname, pidx, _ = self.flat_trajs[idx]
-                prompt = self.data.prompts.get(gname, [""])[pidx] if gname in self.data.prompts and pidx < len(self.data.prompts[gname]) else "?"
-                pred = self.data.predictions.get(gname, [""])[pidx] if gname in self.data.predictions and pidx < len(self.data.predictions[gname]) else "?"
+                prompt = ""
+                if gname in self.data.prompts and pidx < len(self.data.prompts[gname]):
+                    prompt = self.data.prompts[gname][pidx]
+                pred = ""
+                if gname in self.data.predictions and pidx < len(self.data.predictions[gname]):
+                    pred = self.data.predictions[gname][pidx]
                 print(f"  Highlighted #{idx+1}: [{gname}] '{prompt}' → '{pred}'")
-                self._draw()
         elif event.key == '0':
             self.highlighted_idx = None
-            self._draw()
         elif event.key in ('q', 'escape'):
             plt.close(self.fig)
             os._exit(0)
+        else:
+            redraw = False
+
+        if redraw:
+            self._draw()
+
+    def _switch_order(self, order_name: str):
+        """Switch dimension ordering, preserving current actual dims."""
+        old_dims = self.dims
+        self.current_order_name = order_name
+        self.dim_order = self.dim_orders[order_name]
+        # Re-find positions for current dims in new order
+        for i, d in enumerate(old_dims):
+            if d in self.dim_order:
+                self.axis_pos[i] = self.dim_order.index(d)
+            else:
+                self.axis_pos[i] = i
+        print(f"  Switched to '{order_name}' ordering. Dims: {self.dims}")
 
     def _draw(self):
-        """Redraw the 3D plot with full trajectories and arrows."""
         elev = self.ax.elev
         azim = self.ax.azim
 
         self.ax.clear()
 
-        d0, d1, d2 = self.dims[0], self.dims[1], self.dims[2]
+        d0, d1, d2 = self.dims
 
-        # Plot each group's full trajectories
+        # Plot each group
         for group_name, trajs in self.data.trajectories.items():
             color = self.group_colors[group_name]
 
@@ -469,53 +516,51 @@ class Viewer3D:
                 y = traj[:, d1]
                 z = traj[:, d2]
 
-                # Draw the full trajectory line
-                self.ax.plot(x, y, z, color=color, alpha=0.4, linewidth=1.0)
+                # Full trajectory line
+                self.ax.plot(x, y, z, color=color, alpha=0.35, linewidth=0.9)
 
-                # Start marker (first layer)
-                self.ax.scatter([x[0]], [y[0]], [z[0]], c=[color], s=20,
-                              marker='o', alpha=0.4, edgecolors='none')
+                # Start marker
+                self.ax.scatter([x[0]], [y[0]], [z[0]], c=[color], s=15,
+                              marker='o', alpha=0.3, edgecolors='none')
 
-                # End marker (last layer) — bigger
-                self.ax.scatter([x[-1]], [y[-1]], [z[-1]], c=[color], s=60,
-                              marker='o', alpha=0.9, edgecolors='k', linewidths=0.5)
+                # End marker
+                self.ax.scatter([x[-1]], [y[-1]], [z[-1]], c=[color], s=55,
+                              marker='o', alpha=0.9, edgecolors='k', linewidths=0.4)
 
-                # Direction arrows (quiver) at regular intervals
-                for i in range(0, len(x) - 1, self.arrow_step):
-                    dx_arr = x[i+1] - x[i]
-                    dy_arr = y[i+1] - y[i]
-                    dz_arr = z[i+1] - z[i]
-
-                    # Scale arrow length for visibility
-                    length = np.sqrt(dx_arr**2 + dy_arr**2 + dz_arr**2)
-                    if length > 1e-8:
-                        # Fade arrows: earlier = more transparent
-                        alpha = 0.2 + 0.6 * (i / max(len(x) - 1, 1))
-                        self.ax.quiver(
-                            x[i], y[i], z[i],
-                            dx_arr, dy_arr, dz_arr,
-                            color=color, alpha=alpha,
-                            arrow_length_ratio=0.3,
-                            linewidth=0.8
-                        )
+                # Direction arrows
+                if self.show_arrows:
+                    for i in range(0, len(x) - 1, self.arrow_step):
+                        dx_a = x[i+1] - x[i]
+                        dy_a = y[i+1] - y[i]
+                        dz_a = z[i+1] - z[i]
+                        length = np.sqrt(dx_a**2 + dy_a**2 + dz_a**2)
+                        if length > 1e-8:
+                            alpha = 0.15 + 0.5 * (i / max(len(x) - 1, 1))
+                            self.ax.quiver(
+                                x[i], y[i], z[i],
+                                dx_a, dy_a, dz_a,
+                                color=color, alpha=alpha,
+                                arrow_length_ratio=0.3,
+                                linewidth=0.7
+                            )
 
             # Token labels at final position
-            predictions = self.data.predictions.get(group_name, [])
-            for traj_idx, traj in enumerate(trajs):
-                if traj_idx < len(predictions) and predictions[traj_idx]:
-                    self.ax.text(
-                        traj[-1, d0], traj[-1, d1], traj[-1, d2],
-                        f" {predictions[traj_idx]}",
-                        fontsize=7, alpha=0.8, color=color,
-                        fontweight='bold'
-                    )
+            if self.show_labels:
+                predictions = self.data.predictions.get(group_name, [])
+                for traj_idx, traj in enumerate(trajs):
+                    if traj_idx < len(predictions) and predictions[traj_idx]:
+                        self.ax.text(
+                            traj[-1, d0], traj[-1, d1], traj[-1, d2],
+                            f" {predictions[traj_idx]}",
+                            fontsize=7, alpha=0.8, color=color, fontweight='bold'
+                        )
 
             # Centroid at final layer
             if self.show_centroids:
-                final_points = np.stack([t[-1] for t in trajs])
-                cx = final_points[:, d0].mean()
-                cy = final_points[:, d1].mean()
-                cz = final_points[:, d2].mean()
+                final_pts = np.stack([t[-1] for t in trajs])
+                cx = final_pts[:, d0].mean()
+                cy = final_pts[:, d1].mean()
+                cz = final_pts[:, d2].mean()
                 self.ax.scatter([cx], [cy], [cz], c=[color], s=300, marker="*",
                               edgecolors="k", linewidths=1.5, zorder=10,
                               label=group_name)
@@ -529,41 +574,44 @@ class Viewer3D:
 
             self.ax.plot(x, y, z, "r-", linewidth=3.0, alpha=0.95, zorder=20)
 
-            # Arrows on highlighted
-            for i in range(0, len(x) - 1, max(1, self.arrow_step // 2)):
-                dx_arr = x[i+1] - x[i]
-                dy_arr = y[i+1] - y[i]
-                dz_arr = z[i+1] - z[i]
-                length = np.sqrt(dx_arr**2 + dy_arr**2 + dz_arr**2)
+            # Denser arrows on highlighted
+            step = max(1, self.arrow_step // 2)
+            for i in range(0, len(x) - 1, step):
+                dx_a = x[i+1] - x[i]
+                dy_a = y[i+1] - y[i]
+                dz_a = z[i+1] - z[i]
+                length = np.sqrt(dx_a**2 + dy_a**2 + dz_a**2)
                 if length > 1e-8:
                     self.ax.quiver(
                         x[i], y[i], z[i],
-                        dx_arr, dy_arr, dz_arr,
-                        color='red', alpha=0.8,
+                        dx_a, dy_a, dz_a,
+                        color='red', alpha=0.7,
                         arrow_length_ratio=0.35,
-                        linewidth=1.5, zorder=21
+                        linewidth=1.4, zorder=21
                     )
 
-            # Start = green triangle, End = red diamond
-            self.ax.scatter([x[0]], [y[0]], [z[0]], c="green", s=100,
+            self.ax.scatter([x[0]], [y[0]], [z[0]], c="limegreen", s=100,
                           marker="^", edgecolors="k", linewidths=1.5, zorder=22)
             self.ax.scatter([x[-1]], [y[-1]], [z[-1]], c="red", s=150,
                           marker="D", edgecolors="k", linewidths=1.5, zorder=22)
 
-        # Labels
-        self.ax.set_xlabel(f"dim {d0}", fontsize=10)
-        self.ax.set_ylabel(f"dim {d1}", fontsize=10)
-        self.ax.set_zlabel(f"dim {d2}", fontsize=10)
+        # Axis labels
+        self.ax.set_xlabel(f"dim {d0}", fontsize=10, fontweight='bold')
+        self.ax.set_ylabel(f"dim {d1}", fontsize=10, fontweight='bold')
+        self.ax.set_zlabel(f"dim {d2}", fontsize=10, fontweight='bold')
 
+        # Title
         n_groups = len(self.data.trajectories)
         n_total = len(self.flat_trajs)
-        title = (f"dims [{d0}, {d1}, {d2}]  |  "
-                f"combo {self.combo_idx+1}/{len(self.dim_combos)}  |  "
-                f"{n_groups} group(s), {n_total} trajectories\n"
-                f"←/→ = change dims   ↑/↓ = rotate triplet   "
-                f"F = convergence dims   1-9 = highlight   drag = rotate")
-
-        self.ax.set_title(title, fontsize=9, fontfamily="monospace")
+        order_char = self.current_order_name[0].upper()
+        title = (
+            f"X=dim {d0}  Y=dim {d1}  Z=dim {d2}  |  "
+            f"order: {self.current_order_name}  |  "
+            f"{n_groups} group(s), {n_total} traj\n"
+            f"←→=X  ↑↓=Y  PgUp/Dn=Z  (shift=×10)  |  "
+            f"N=seq  V=var  F=conv  |  A=arrows  T=labels  C=centroids"
+        )
+        self.ax.set_title(title, fontsize=8.5, fontfamily="monospace")
 
         if self.show_centroids:
             self.ax.legend(loc="upper left", fontsize=8)
@@ -572,29 +620,40 @@ class Viewer3D:
         self.fig.canvas.draw_idle()
 
     def run(self):
-        print("\n" + "=" * 65)
+        d = self.dims
+        print("\n" + "=" * 70)
         print("  3D RESIDUAL STREAM TRAJECTORY VIEWER")
-        print("=" * 65)
-        print(f"  Layers: {self.n_layers}  |  Dimensions: {self.d_model}")
-        print(f"  Dimension combos available: {len(self.dim_combos)}")
-        print(f"  Current dims: {self.dims}")
+        print("=" * 70)
+        print(f"  Layers: {self.n_layers}  |  Total dims: {self.d_model}")
+        print(f"  Starting dims: X={d[0]}, Y={d[1]}, Z={d[2]}")
+        print(f"  Ordering: {self.current_order_name}")
         print()
-        print("  CONTROLS:")
-        print("    ← / →        Cycle dimension triplets")
-        print("    ↑ / ↓        Rotate axes within current triplet")
-        print("    F            Switch to convergence dims")
-        print("    C            Toggle centroids")
-        print("    1-9          Highlight trajectory")
-        print("    0            Clear highlight")
-        print("    P            Save PNG")
-        print("    R            Reset")
-        print("    Q / Esc      Quit")
-        print("    Ctrl+C       Force quit (works even when unfocused)")
+        print("  DIMENSION NAVIGATION (each axis independent):")
+        print("    ← / →          X-axis dim ±1")
+        print("    ↑ / ↓          Y-axis dim ±1")
+        print("    PgUp / PgDn    Z-axis dim ±1")
+        print("    Shift+key      Jump ±10")
+        print()
+        print("  ORDERING MODES:")
+        print("    N              Sequential (0, 1, 2, 3, ...)")
+        print("    V              By variance (most spread first)")
+        print("    F              By convergence (most attractor-like first)")
+        print()
+        print("  DISPLAY:")
+        print("    A              Toggle arrows")
+        print("    T              Toggle token labels")
+        print("    C              Toggle centroids")
+        print("    1-9            Highlight trajectory")
+        print("    0              Clear highlight")
+        print("    P              Save PNG")
+        print("    R              Reset")
+        print("    Q / Esc        Quit")
+        print("    Ctrl+C         Force quit (works unfocused)")
         print()
         print("  MOUSE:")
-        print("    Left drag    Trackball rotation (natural)")
-        print("    Scroll       Zoom in/out")
-        print("=" * 65 + "\n")
+        print("    Left drag      Natural trackball rotation")
+        print("    Scroll         Zoom")
+        print("=" * 70 + "\n")
         plt.show()
 
 
@@ -606,18 +665,11 @@ def main():
     parser = argparse.ArgumentParser(
         description="3D Residual Stream Trajectory Viewer",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  python3 residual_attractors.py attractor_data/berlin_multilingual
-  python3 residual_attractors.py attractor_data/
-  python3 residual_attractors.py attractor_data/ --groups berlin_multilingual paris_multilingual
-  python3 residual_attractors.py attractor_data/berlin_multilingual --dims 47,203,512
-        """
     )
     parser.add_argument("data_dir", type=str,
-                       help="Path to group directory or parent directory containing groups")
+                       help="Path to group directory or parent directory")
     parser.add_argument("--groups", type=str, nargs="*", default=None,
-                       help="Specific groups to load (when data_dir is parent)")
+                       help="Specific groups to load")
     parser.add_argument("--dims", type=str, default=None,
                        help="Initial dimension triplet, comma-separated (e.g. '47,203,512')")
 
