@@ -82,7 +82,23 @@ import matplotlib
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.font_manager as fm
 
+# CJK-Font-Support: Versuche einen Font zu finden der japanische/chinesische Zeichen kann
+_cjk_fonts = [
+    'Noto Sans CJK JP', 'Noto Sans JP', 'IPAGothic', 'IPAPGothic',
+    'WenQuanYi Micro Hei', 'Arial Unicode MS', 'MS Gothic',
+    'Hiragino Sans', 'Yu Gothic',
+]
+_available = {f.name for f in fm.fontManager.ttflist}
+_fallback = [f for f in _cjk_fonts if f in _available]
+if _fallback:
+    plt.rcParams['font.family'] = ['DejaVu Sans'] + _fallback + ['sans-serif']
+    print(f"  Font: using {_fallback[0]} for CJK support")
+else:
+    # Kein CJK-Font gefunden — Warnung ausgeben
+    print("  WARNING: No CJK font found. Install fonts-noto-cjk for Japanese/Chinese labels:")
+    print("           sudo apt install fonts-noto-cjk")
 
 # =============================================================================
 # Data Loader
@@ -544,15 +560,28 @@ class Viewer3D:
                                 linewidth=0.7
                             )
 
-            # Token labels at final position
+            # Token labels at final position — show prompt context + prediction
             if self.show_labels:
                 predictions = self.data.predictions.get(group_name, [])
+                prompts = self.data.prompts.get(group_name, [])
                 for traj_idx, traj in enumerate(trajs):
+                    label_parts = []
+                    # Kurzer Prompt-Ausschnitt (zeigt Sprache/Kontext)
+                    if traj_idx < len(prompts) and prompts[traj_idx]:
+                        p = prompts[traj_idx].strip()
+                        # Letzte ~30 Zeichen des Prompts als Kontext
+                        short = "…" + p[-30:] if len(p) > 30 else p
+                        label_parts.append(short)
+                    # Prediction
                     if traj_idx < len(predictions) and predictions[traj_idx]:
+                        label_parts.append(f"→ {predictions[traj_idx]}")
+
+                    if label_parts:
+                        label = " ".join(label_parts)
                         self.ax.text(
                             traj[-1, d0], traj[-1, d1], traj[-1, d2],
-                            f" {predictions[traj_idx]}",
-                            fontsize=7, alpha=0.8, color=color, fontweight='bold'
+                            f" {label}",
+                            fontsize=6, alpha=0.8, color=color, fontweight='bold'
                         )
 
             # Centroid at final layer
@@ -574,7 +603,6 @@ class Viewer3D:
 
             self.ax.plot(x, y, z, "r-", linewidth=3.0, alpha=0.95, zorder=20)
 
-            # Denser arrows on highlighted
             step = max(1, self.arrow_step // 2)
             for i in range(0, len(x) - 1, step):
                 dx_a = x[i+1] - x[i]
@@ -603,7 +631,6 @@ class Viewer3D:
         # Title
         n_groups = len(self.data.trajectories)
         n_total = len(self.flat_trajs)
-        order_char = self.current_order_name[0].upper()
         title = (
             f"X=dim {d0}  Y=dim {d1}  Z=dim {d2}  |  "
             f"order: {self.current_order_name}  |  "
