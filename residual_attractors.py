@@ -263,93 +263,6 @@ ATTRACTOR_GROUPS: list[PromptGroup] = [
 
 
 # =============================================================================
-# Residual Stream Extraction
-# =============================================================================
-
-class ResidualStreamExtractor:
-    def __init__(self, model, tokenizer, device: str = "cuda"):
-        self.model = model
-        self.tokenizer = tokenizer
-        self.device = device
-        self.hooks = []
-        self.residual_streams = {}
-
-    def _get_layer_modules(self):
-        if hasattr(self.model, 'model') and hasattr(self.model.model, 'layers'):
-            return self.model.model.layers
-        elif hasattr(self.model, 'transformer') and hasattr(self.model.transformer, 'h'):
-            return self.model.transformer.h
-        elif hasattr(self.model, 'gpt_neox') and hasattr(self.model.gpt_neox, 'layers'):
-            return self.model.gpt_neox.layers
-        else:
-            raise ValueError(
-                f"Cannot find transformer layers in model of type {type(self.model)}. "
-                f"Top-level attributes: {[a for a in dir(self.model) if not a.startswith('_')]}"
-            )
-
-    def _register_hooks(self):
-        self.residual_streams = {}
-        self.hooks = []
-        layers = self._get_layer_modules()
-
-        for layer_idx, layer in enumerate(layers):
-            def make_hook(idx):
-                def hook_fn(module, input, output):
-                    if isinstance(output, tuple):
-                        hidden = output[0]
-                    else:
-                        hidden = output
-                    self.residual_streams[idx] = hidden.detach().cpu()
-                return hook_fn
-            h = layer.register_forward_hook(make_hook(layer_idx))
-            self.hooks.append(h)
-
-    def _remove_hooks(self):
-        for h in self.hooks:
-            h.remove()
-        self.hooks = []
-
-    def extract(self, prompt: str) -> dict:
-        """Run prompt, capture full residual streams at all layers and positions."""
-        self._register_hooks()
-        try:
-            inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
-            input_ids = inputs["input_ids"][0].tolist()
-            tokens = [self.tokenizer.decode([tid]) for tid in input_ids]
-
-            with torch.no_grad():
-                outputs = self.model(**inputs)
-
-            logits = outputs.logits[0, -1, :]
-            top_k = torch.topk(logits, k=10)
-            top_k_predictions = [
-                (self.tokenizer.decode([idx.item()]).strip(), float(logits[idx].item()))
-                for idx in top_k.indices
-            ]
-            predicted_token = top_k_predictions[0][0]
-
-            # Full streams: dict[layer_idx] -> np.ndarray (seq_len, d_model)
-            full_streams = {}
-            final_token_streams = {}
-            for layer_idx, stream in self.residual_streams.items():
-                full_streams[layer_idx] = stream[0].float().numpy()
-                final_token_streams[layer_idx] = stream[0, -1, :].float().numpy()
-
-            return {
-                "prompt": prompt,
-                "input_ids": input_ids,
-                "tokens": tokens,
-                "n_layers": len(self.residual_streams),
-                "full_streams": full_streams,
-                "final_token_streams": final_token_streams,
-                "predicted_token": predicted_token,
-                "top_k_predictions": top_k_predictions,
-            }
-        finally:
-            self._remove_hooks()
-
-
-# =============================================================================
 # CSV Data Saver
 # =============================================================================
 
@@ -770,15 +683,129 @@ class AttractorVisualizer:
         print("  All visualizations complete.")
 
 
-# =============================================================================
-# Main
-# =============================================================================
+class ResidualStreamExtractor:
+    def __init__(self, model, tokenizer, device: str = "cuda", max_tokens: Optional[int] = None):
+        self.model = model
+        self.tokenizer = tokenizer
+        self.device = device
+        self.max_tokens = max_tokens
+        self.hooks = []
+        self.residual_streams = {}
+
+    def _get_layer_modules(self):
+        if hasattr(self.model, 'model') and hasattr(self.model.model, 'layers'):
+            return self.model.model.layers
+        elif hasattr(self.model, 'transformer') and hasattr(self.model.transformer, 'h'):
+            return self.model.transformer.h
+        elif hasattr(self.model, 'gpt_neox') and hasattr(self.model.gpt_neox, 'layers'):
+            return self.model.gpt_neox.layers
+        else:
+            raise ValueError(
+                f"Cannot find transformer layers in model of type {type(self.model)}. "
+                f"Top-level attributes: {[a for a in dir(self.model) if not a.startswith('_')]}"
+            )
+
+    def _register_hooks(self):
+        self.residual_streams = {}
+        self.hooks = []
+        layers = self._get_layer_modules()
+
+        for layer_idx, layer in enumerate(layers):
+            def make_hook(idx):
+                def hook_fn(module, input, output):
+                    if isinstance(output, tuple):
+                        hidden = output[0]
+                    else:
+                        hidden = output
+                    self.residual_streams[idx] = hidden.detach().cpu()
+                return hook_fn
+            h = layer.register_forward_hook(make_hook(layer_idx))
+            self.hooks.append(h)
+
+    def _remove_hooks(self):
+        for h in self.hooks:
+            h.remove()
+        self.hooks = []
+
+    def extract(self, prompt: str) -> dict:
+        """Run prompt, capture full residual streams at all layers and positions.
+        
+        If max_tokens is set, the input is truncated to at most max_tokens tokens.
+        """
+        self._register_hooks()
+        try:
+            inputs = self.tokenizer(prompt, return_tensors="pt")
+
+            # --- Truncate to max_tokens if specified ---
+            if self.max_tokens is not None:
+                input_ids = inputs["input_ids"][:, :self.max_tokens]
+                attention_mask = inputs.get("attention_mask")
+                if attention_mask is not None:
+                    attention_mask = attention_mask[:, :self.max_tokens]
+                inputs = {"input_ids": input_ids}
+                if attention_mask is not None:
+                    inputs["attention_mask"] = attention_mask
+
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            input_ids = inputs["input_ids"][0].tolist()
+            tokens = [self.tokenizer.decode([tid]) for tid in input_ids]
+
+            with torch.no_grad():
+                outputs = self.model(**inputs)
+
+            logits = outputs.logits[0, -1, :]
+            top_k = torch.topk(logits, k=10)
+            top_k_predictions = [
+                (self.tokenizer.decode([idx.item()]).strip(), float(logits[idx].item()))
+                for idx in top_k.indices
+            ]
+            predicted_token = top_k_predictions[0][0]
+
+            # Full streams: dict[layer_idx] -> np.ndarray (seq_len, d_model)
+            full_streams = {}
+            final_token_streams = {}
+            for layer_idx, stream in self.residual_streams.items():
+                full_streams[layer_idx] = stream[0].float().numpy()
+                final_token_streams[layer_idx] = stream[0, -1, :].float().numpy()
+
+            return {
+                "prompt": prompt,
+                "input_ids": input_ids,
+                "tokens": tokens,
+                "n_layers": len(self.residual_streams),
+                "full_streams": full_streams,
+                "final_token_streams": final_token_streams,
+                "predicted_token": predicted_token,
+                "top_k_predictions": top_k_predictions,
+            }
+        finally:
+            self._remove_hooks()
 
 def main():
     parser = argparse.ArgumentParser(description="Residual Stream Attractor Extraction")
+
+    # --- NEU: Model-Preset statt direkter Model-ID als Default ---
+    MODEL_PRESETS = {
+        "deepseek": "deepseek-ai/deepseek-llm-7b-base",
+        "gpt2": "gpt2",
+        "gpt2-medium": "gpt2-medium",
+        "gpt2-large": "gpt2-large",
+        "gpt2-xl": "gpt2-xl",
+        "distilgpt2": "distilgpt2",
+        "pythia-70m": "EleutherAI/pythia-70m",
+        "pythia-160m": "EleutherAI/pythia-160m",
+        "pythia-410m": "EleutherAI/pythia-410m",
+        "pythia-1b": "EleutherAI/pythia-1b",
+    }
+
     parser.add_argument(
-        "--model", type=str, default="deepseek-ai/deepseek-llm-7b-base",
-        help="HuggingFace model ID (default: deepseek-ai/deepseek-llm-7b-base)",
+        "--model-preset", type=str, default="deepseek",
+        choices=list(MODEL_PRESETS.keys()),
+        help=f"Model preset to use (default: deepseek). Available: {list(MODEL_PRESETS.keys())}",
+    )
+    parser.add_argument(
+        "--model", type=str, default=None,
+        help="HuggingFace model ID (overrides --model-preset if given)",
     )
     parser.add_argument(
         "--device", type=str, default="auto",
@@ -797,14 +824,30 @@ def main():
         choices=["float16", "bfloat16", "float32"],
         help="Model dtype (default: float16)",
     )
+    parser.add_argument(
+        "--max-tokens", type=int, default=None,
+        help="Maximum number of tokens to process per prompt. Truncates input if exceeded. "
+             "Default: no limit (use full prompt length).",
+    )
 
     args = parser.parse_args()
 
-    # Determine device
+    # --- Resolve model ID from preset or direct override ---
+    if args.model is not None:
+        model_id = args.model
+    else:
+        model_id = MODEL_PRESETS[args.model_preset]
+
+    # --- Auto-adjust dtype for small models without GPU ---
     if args.device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
     else:
         device = args.device
+
+    # GPT-2 and similar small models don't support float16 on CPU well
+    if device == "cpu" and args.dtype == "float16":
+        print(f"[INFO] Switching dtype from float16 to float32 for CPU execution.")
+        args.dtype = "float32"
 
     dtype_map = {
         "float16": torch.float16,
@@ -816,19 +859,21 @@ def main():
     print(f"{'='*60}")
     print(f"Residual Stream Attractor Extraction Tool")
     print(f"{'='*60}")
-    print(f"Model: {args.model}")
+    print(f"Model preset: {args.model_preset}")
+    print(f"Model ID: {model_id}")
     print(f"Device: {device}")
     print(f"Dtype: {args.dtype}")
+    print(f"Max tokens: {args.max_tokens or 'unlimited'}")
     print(f"Output: {args.output}")
     print(f"{'='*60}")
 
     # Load model and tokenizer
     print(f"\nLoading tokenizer...")
-    tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
 
     print(f"Loading model...")
     model = AutoModelForCausalLM.from_pretrained(
-        args.model,
+        model_id,
         torch_dtype=dtype,
         device_map=device if device == "auto" else {"": device},
         trust_remote_code=True,
@@ -837,7 +882,7 @@ def main():
     print(f"Model loaded! Parameters: {sum(p.numel() for p in model.parameters()):,}")
 
     # Setup extractor
-    extractor = ResidualStreamExtractor(model, tokenizer, device)
+    extractor = ResidualStreamExtractor(model, tokenizer, device, max_tokens=args.max_tokens)
     layers = extractor._get_layer_modules()
     n_layers = len(layers)
     print(f"Transformer layers: {n_layers}")
@@ -962,7 +1007,6 @@ def main():
     print(f"  {{group}}/metrics.json")
     print(f"  visualizations/*.png")
     print(f"  cross_group_comparison.json")
-
 
 if __name__ == "__main__":
     main()
