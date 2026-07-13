@@ -1363,8 +1363,8 @@ def main():
         help="Device: 'cuda', 'cpu', or 'auto' (default: auto)",
     )
     parser.add_argument(
-        "--output", type=str, default="attractor_data_v2",
-        help="Output directory for saved data (default: attractor_data_v2)",
+        "--output", type=str, default="attractor_data",
+        help="Output directory for saved data (default: attractor_data)",
     )
     parser.add_argument(
         "--groups", type=str, nargs="*", default=None,
