@@ -19,10 +19,9 @@ echo "Working dir:   $(pwd)"
 echo "============================================"
 
 # --- Configuration ---
-MODEL="${MODEL:-deepseek-ai/deepseek-llm-7b-base}"
-DTYPE="${DTYPE:-float16}"
-OUTPUT_DIR="${OUTPUT_DIR:-attractor_data_raw_${SLURM_JOB_ID}}"
-GROUPS="${GROUPS:-200270}"
+DATA_DIR="${DATA_DIR:-attractor_data}"
+GROUPS="${GROUPS:-}"
+DIMS="${DIMS:-}"
 
 # --- Ensure uv is available ---
 export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
@@ -34,44 +33,43 @@ if ! command -v uv &> /dev/null; then
 fi
 
 echo "uv version: $(uv --version)"
-echo "Model: $MODEL"
-echo "Dtype: $DTYPE"
-echo "Output: $OUTPUT_DIR"
+echo "Data dir: $DATA_DIR"
+echo "Groups: ${GROUPS:-all}"
+echo "Dims: ${DIMS:-auto}"
 echo ""
 
-# --- Run extraction ---
-# NOTE: residual_attractors.py muss --model, --device, --dtype, --output,
-#       --save-full-streams akzeptieren! Aktuell ist es nur ein Viewer.
-#       Falls du ein separates extract-Skript hast, ändere SCRIPT= hier:
-SCRIPT="residual_attractors.py"
-
-if [ ! -f "$SCRIPT" ]; then
-    echo "ERROR: $SCRIPT not found!"
-    ls -la *.py 2>/dev/null
+# --- Verify script and data exist ---
+if [ ! -f "residual_attractors.py" ]; then
+    echo "ERROR: residual_attractors.py not found in $(pwd)"
+    ls -la *.py 2>/dev/null || echo "  (none)"
     exit 1
 fi
 
-CMD=(
-    uv run "$SCRIPT"
-    --model "$MODEL"
-    --device cuda
-    --dtype "$DTYPE"
-    --output "$OUTPUT_DIR"
-    --save-full-streams
-)
+if [ ! -d "$DATA_DIR" ]; then
+    echo "ERROR: Data directory '$DATA_DIR' not found!"
+    echo "Available directories:"
+    ls -d */ 2>/dev/null || echo "  (none)"
+    exit 1
+fi
+
+# --- Build command ---
+CMD=(uv run residual_attractors.py "$DATA_DIR")
 
 if [ -n "$GROUPS" ]; then
     CMD+=(--groups $GROUPS)
 fi
 
+if [ -n "$DIMS" ]; then
+    CMD+=(--dims "$DIMS")
+fi
+
 echo "Running: ${CMD[*]}"
 echo "============================================"
+echo ""
 
 "${CMD[@]}"
 
 echo ""
 echo "============================================"
-echo "Job finished:  $(date)"
-echo "Output in:     $OUTPUT_DIR"
-echo "Size:          $(du -sh "$OUTPUT_DIR" 2>/dev/null | cut -f1)"
+echo "Job finished: $(date)"
 echo "============================================"
