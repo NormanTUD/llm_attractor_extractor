@@ -45,13 +45,6 @@ if [ ! -f "residual_attractors.py" ]; then
     exit 1
 fi
 
-if [ ! -d "$DATA_DIR" ]; then
-    echo "ERROR: Data directory '$DATA_DIR' not found!"
-    echo "Available directories:"
-    ls -d */ 2>/dev/null || echo "  (none)"
-    exit 1
-fi
-
 # --- Build command ---
 CMD=(uv run residual_attractors.py "$DATA_DIR")
 
