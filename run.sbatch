@@ -43,8 +43,10 @@ if [ ! -f "residual_attractors.py" ]; then
     exit 1
 fi
 
+mkdir -p results
+
 # --- Build command ---
-CMD=(uv run residual_attractors.py)
+CMD=(uv run residual_attractors.py results)
 
 echo "Running: ${CMD[*]}"
 echo "============================================"
