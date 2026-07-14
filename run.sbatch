@@ -46,14 +46,6 @@ fi
 # --- Build command ---
 CMD=(uv run residual_attractors.py)
 
-if [ -n "$GROUPS" ]; then
-    CMD+=(--groups $GROUPS)
-fi
-
-if [ -n "$DIMS" ]; then
-    CMD+=(--dims "$DIMS")
-fi
-
 echo "Running: ${CMD[*]}"
 echo "============================================"
 echo ""
