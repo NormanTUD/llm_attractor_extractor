@@ -49,7 +49,7 @@ echo "Output: $OUTPUT_DIR"
 echo ""
 
 # --- Verify extraction script exists ---
-EXTRACT_SCRIPT="extract_residuals.py"
+EXTRACT_SCRIPT="residual_attractors.py"
 if [ ! -f "$EXTRACT_SCRIPT" ]; then
     echo "ERROR: $EXTRACT_SCRIPT not found in $(pwd)"
     echo "Available python files:"
