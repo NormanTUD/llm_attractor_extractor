@@ -19,7 +19,6 @@ echo "Working dir:   $(pwd)"
 echo "============================================"
 
 # --- Configuration ---
-DATA_DIR="${DATA_DIR:-attractor_data}"
 GROUPS="${GROUPS:-}"
 DIMS="${DIMS:-}"
 
@@ -33,7 +32,6 @@ if ! command -v uv &> /dev/null; then
 fi
 
 echo "uv version: $(uv --version)"
-echo "Data dir: $DATA_DIR"
 echo "Groups: ${GROUPS:-all}"
 echo "Dims: ${DIMS:-auto}"
 echo ""
@@ -46,7 +44,7 @@ if [ ! -f "residual_attractors.py" ]; then
 fi
 
 # --- Build command ---
-CMD=(uv run residual_attractors.py "$DATA_DIR")
+CMD=(uv run residual_attractors.py)
 
 if [ -n "$GROUPS" ]; then
     CMD+=(--groups $GROUPS)
