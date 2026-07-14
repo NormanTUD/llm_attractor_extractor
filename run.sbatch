@@ -49,7 +49,7 @@ echo "Output: $OUTPUT_DIR"
 echo ""
 
 # --- Build command ---
-CMD="uv run residual_attractors.py \
+CMD="uv run extract_residuals.py \
     --model $MODEL \
     --device cuda \
     --dtype $DTYPE \
