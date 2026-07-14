@@ -17,12 +17,12 @@
 # Output goes to $OUTPUT_DIR (default: attractor_data_raw_$SLURM_JOB_ID)
 # ============================================================================
 
-set -euo pipefail
+set -euxo pipefail
 
 echo "============================================"
 echo "Job ID:        $SLURM_JOB_ID"
 echo "Node:          $SLURM_NODELIST"
-echo "GPUs:          $CUDA_VISIBLE_DEVICES"
+echo "GPUs:          ${CUDA_VISIBLE_DEVICES:-none}"
 echo "Start time:    $(date)"
 echo "Working dir:   $(pwd)"
 echo "============================================"
@@ -48,28 +48,40 @@ echo "Dtype: $DTYPE"
 echo "Output: $OUTPUT_DIR"
 echo ""
 
-# --- Build command ---
-CMD="uv run residual_attractors.py \
-    --model $MODEL \
-    --device cuda \
-    --dtype $DTYPE \
-    --output $OUTPUT_DIR \
-    --save-full-streams"
-
-if [ -n "$GROUPS" ]; then
-    CMD="$CMD --groups $GROUPS"
+# --- Verify extraction script exists ---
+EXTRACT_SCRIPT="extract_residuals.py"
+if [ ! -f "$EXTRACT_SCRIPT" ]; then
+    echo "ERROR: $EXTRACT_SCRIPT not found in $(pwd)"
+    echo "Available python files:"
+    ls -la *.py 2>/dev/null || echo "  (none)"
+    exit 1
 fi
 
-echo "Running: $CMD"
+# --- Build command ---
+CMD=(
+    uv run "$EXTRACT_SCRIPT"
+    --model "$MODEL"
+    --device cuda
+    --dtype "$DTYPE"
+    --output "$OUTPUT_DIR"
+    --save-full-streams
+)
+
+if [ -n "$GROUPS" ]; then
+    CMD+=(--groups $GROUPS)
+fi
+
+echo "Running: ${CMD[*]}"
 echo "============================================"
 echo ""
 
-eval $CMD
+# --- Run with proper array expansion (no eval!) ---
+"${CMD[@]}"
 
 echo ""
 echo "============================================"
 echo "Job finished:  $(date)"
 echo "Output in:     $OUTPUT_DIR"
-echo "Raw streams:   $(find $OUTPUT_DIR -name '*_full_streams.npy' | wc -l) files"
-echo "Total size:    $(du -sh $OUTPUT_DIR | cut -f1)"
+echo "Raw streams:   $(find "$OUTPUT_DIR" -name '*_full_streams.npy' 2>/dev/null | wc -l) files"
+echo "Total size:    $(du -sh "$OUTPUT_DIR" 2>/dev/null | cut -f1)"
 echo "============================================"
