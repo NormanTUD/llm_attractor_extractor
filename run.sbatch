@@ -8,68 +8,53 @@
 #SBATCH --mem=64G
 #SBATCH --cpus-per-task=6
 
-# ============================================================================
-# Residual Stream Attractor Extraction — SLURM Batch Job
-#
-# Saves RAW residual streams (all layers, all sequence positions) as .npy
-# plus the final-token streams and attractor metrics.
-#
-# Output goes to $OUTPUT_DIR (default: attractor_data_raw_$SLURM_JOB_ID)
-# ============================================================================
-
-set -euo pipefail
+set -euxo pipefail
 
 echo "============================================"
 echo "Job ID:        $SLURM_JOB_ID"
 echo "Node:          $SLURM_NODELIST"
-echo "GPUs:          $CUDA_VISIBLE_DEVICES"
+echo "GPUs:          ${CUDA_VISIBLE_DEVICES:-none}"
 echo "Start time:    $(date)"
 echo "Working dir:   $(pwd)"
 echo "============================================"
 
 # --- Configuration ---
-MODEL="${MODEL:-deepseek-ai/deepseek-llm-7b-base}"
-DTYPE="${DTYPE:-float16}"
-OUTPUT_DIR="${OUTPUT_DIR:-attractor_data_raw_${SLURM_JOB_ID}}"
-GROUPS="${GROUPS:-}"  # empty = all groups
+GROUPS="${GROUPS:-}"
+DIMS="${DIMS:-}"
 
 # --- Ensure uv is available ---
 export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
 
 if ! command -v uv &> /dev/null; then
-    echo "Installing uv..."
+    echo "ERROR: uv not found. Installing..."
     curl -LsSf https://astral.sh/uv/install.sh | sh
     export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
 fi
 
 echo "uv version: $(uv --version)"
-echo "Model: $MODEL"
-echo "Dtype: $DTYPE"
-echo "Output: $OUTPUT_DIR"
+echo "Groups: ${GROUPS:-all}"
+echo "Dims: ${DIMS:-auto}"
 echo ""
 
-# --- Build command ---
-CMD="uv run residual_attractors.py \
-    --model $MODEL \
-    --device cuda \
-    --dtype $DTYPE \
-    --output $OUTPUT_DIR \
-    --save-full-streams"
-
-if [ -n "$GROUPS" ]; then
-    CMD="$CMD --groups $GROUPS"
+# --- Verify script and data exist ---
+if [ ! -f "residual_attractors.py" ]; then
+    echo "ERROR: residual_attractors.py not found in $(pwd)"
+    ls -la *.py 2>/dev/null || echo "  (none)"
+    exit 1
 fi
 
-echo "Running: $CMD"
+mkdir -p results
+
+# --- Build command ---
+CMD=(uv run residual_attractors.py results)
+
+echo "Running: ${CMD[*]}"
 echo "============================================"
 echo ""
 
-eval $CMD
+"${CMD[@]}"
 
 echo ""
 echo "============================================"
-echo "Job finished:  $(date)"
-echo "Output in:     $OUTPUT_DIR"
-echo "Raw streams:   $(find $OUTPUT_DIR -name '*_full_streams.npy' | wc -l) files"
-echo "Total size:    $(du -sh $OUTPUT_DIR | cut -f1)"
+echo "Job finished: $(date)"
 echo "============================================"
