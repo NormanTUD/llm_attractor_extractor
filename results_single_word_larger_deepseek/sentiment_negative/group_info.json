@@ -1,0 +1,332 @@
+{
+  "group_name": "sentiment_negative",
+  "description": "Strongly negative sentiment",
+  "expected_answer": "negative_continuation",
+  "category": "sentiment",
+  "n_prompts": 8,
+  "n_layers": 65,
+  "d_model": 5120,
+  "n_heads": 40,
+  "total_tokens": 59,
+  "prompts": [
+    "This movie was absolutely terrible and I",
+    "I am so incredibly sad because",
+    "The worst day of my life was when I",
+    "Everything is horrible and I feel",
+    "This is the most awful thing I have ever",
+    "I hate this so much, it makes me feel",
+    "What a ugly and terrible",
+    "I'm devastated and heartbroken because"
+  ],
+  "predictions": [
+    " can",
+    " I",
+    " was",
+    " like",
+    " seen",
+    " so",
+    " day",
+    " I"
+  ],
+  "prediction_probs": [
+    0.46484375,
+    0.470703125,
+    0.37890625,
+    0.416015625,
+    0.400390625,
+    0.380859375,
+    0.11279296875,
+    0.375
+  ],
+  "top5_predictions": [
+    [
+      " can",
+      " couldn",
+      " cannot",
+      " don",
+      "'m"
+    ],
+    [
+      " I",
+      " my",
+      " of",
+      " the",
+      " someone"
+    ],
+    [
+      " was",
+      " got",
+      " found",
+      " lost",
+      " had"
+    ],
+    [
+      " like",
+      " so",
+      " bad",
+      " stuck",
+      " really"
+    ],
+    [
+      " seen",
+      " had",
+      " read",
+      " heard",
+      " experienced"
+    ],
+    [
+      " so",
+      " like",
+      " really",
+      " bad",
+      " stuck"
+    ],
+    [
+      " day",
+      " movie",
+      " place",
+      " experience",
+      " thing"
+    ],
+    [
+      " I",
+      " my",
+      " of",
+      " someone",
+      " the"
+    ]
+  ],
+  "top5_probs": [
+    [
+      0.46484375,
+      0.11767578125,
+      0.11767578125,
+      0.038330078125,
+      0.0279541015625
+    ],
+    [
+      0.470703125,
+      0.322265625,
+      0.072265625,
+      0.0206298828125,
+      0.01513671875
+    ],
+    [
+      0.37890625,
+      0.1083984375,
+      0.1083984375,
+      0.07958984375,
+      0.06591796875
+    ],
+    [
+      0.416015625,
+      0.32421875,
+      0.041015625,
+      0.036376953125,
+      0.0181884765625
+    ],
+    [
+      0.400390625,
+      0.107421875,
+      0.10107421875,
+      0.061279296875,
+      0.0576171875
+    ],
+    [
+      0.380859375,
+      0.279296875,
+      0.06591796875,
+      0.054931640625,
+      0.017822265625
+    ],
+    [
+      0.11279296875,
+      0.10595703125,
+      0.07763671875,
+      0.05322265625,
+      0.04150390625
+    ],
+    [
+      0.375,
+      0.375,
+      0.138671875,
+      0.0272216796875,
+      0.021240234375
+    ]
+  ],
+  "token_counts": [
+    7,
+    6,
+    9,
+    6,
+    9,
+    10,
+    5,
+    7
+  ],
+  "inference_times_ms": [
+    31495.78549899161,
+    28746.622507009306,
+    33476.525867998134,
+    36665.5868079979,
+    27317.73650299874,
+    36096.305765997386,
+    26783.001464995323,
+    34101.92939300032
+  ],
+  "total_inference_time_ms": 254683.49380898871,
+  "token_ids_per_prompt": [
+    [
+      1986,
+      5700,
+      572,
+      10875,
+      17478,
+      323,
+      358
+    ],
+    [
+      40,
+      1079,
+      773,
+      16815,
+      12421,
+      1576
+    ],
+    [
+      785,
+      11785,
+      1899,
+      315,
+      847,
+      2272,
+      572,
+      979,
+      358
+    ],
+    [
+      34964,
+      374,
+      27102,
+      323,
+      358,
+      2666
+    ],
+    [
+      1986,
+      374,
+      279,
+      1429,
+      24607,
+      3166,
+      358,
+      614,
+      3512
+    ],
+    [
+      40,
+      12213,
+      419,
+      773,
+      1753,
+      11,
+      432,
+      3643,
+      752,
+      2666
+    ],
+    [
+      3838,
+      264,
+      27261,
+      323,
+      17478
+    ],
+    [
+      40,
+      2776,
+      57997,
+      323,
+      4746,
+      48909,
+      1576
+    ]
+  ],
+  "token_texts_per_prompt": [
+    [
+      "This",
+      " movie",
+      " was",
+      " absolutely",
+      " terrible",
+      " and",
+      " I"
+    ],
+    [
+      "I",
+      " am",
+      " so",
+      " incredibly",
+      " sad",
+      " because"
+    ],
+    [
+      "The",
+      " worst",
+      " day",
+      " of",
+      " my",
+      " life",
+      " was",
+      " when",
+      " I"
+    ],
+    [
+      "Everything",
+      " is",
+      " horrible",
+      " and",
+      " I",
+      " feel"
+    ],
+    [
+      "This",
+      " is",
+      " the",
+      " most",
+      " awful",
+      " thing",
+      " I",
+      " have",
+      " ever"
+    ],
+    [
+      "I",
+      " hate",
+      " this",
+      " so",
+      " much",
+      ",",
+      " it",
+      " makes",
+      " me",
+      " feel"
+    ],
+    [
+      "What",
+      " a",
+      " ugly",
+      " and",
+      " terrible"
+    ],
+    [
+      "I",
+      "'m",
+      " devastated",
+      " and",
+      " heart",
+      "broken",
+      " because"
+    ]
+  ]
+}
