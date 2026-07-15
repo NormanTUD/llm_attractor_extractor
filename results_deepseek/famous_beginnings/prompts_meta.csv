@@ -1,9 +1,0 @@
-prompt_idx,prompt,predicted_next_token,n_tokens,tokens
-0,To be or not to, be,5,To| be| or| not| to
-1,I think therefore I, can,4,I| think| therefore| I
-2,"One small step for man, one giant leap for", machine,10,"One| small| step| for| man|,| one| giant| leap| for"
-3,In the beginning God created the, first,6,In| the| beginning| God| created| the
-4,"It was the best of times, it was the worst of", times,12,"It| was| the| best| of| times|,| it| was| the| worst| of"
-5,"All animals are equal, but some animals are more", equal,10,"All| animals| are| equal|,| but| some| animals| are| more"
-6,The only thing we have to fear is, fear,8,The| only| thing| we| have| to| fear| is
-7,I have a dream that one day,",",7,I| have| a| dream| that| one| day
