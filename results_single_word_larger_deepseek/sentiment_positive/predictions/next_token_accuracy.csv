@@ -1,0 +1,61 @@
+prompt_idx,token_pos,token_text,actual_next_token,next_token_prob,next_token_rank
+0,0,This, movie,0.000000,32474
+0,1, movie, was,0.149414,1
+0,2, was, absolutely,0.026123,7
+0,3, absolutely, fantastic,0.164062,1
+0,4, fantastic, and,0.010193,3
+0,5, and, I,0.419922,0
+0,6, I,,0.000000,-1
+1,0,I, am,0.000626,55
+1,1, am, so,0.000896,47
+1,2, so, incredibly,0.001526,46
+1,3, incredibly, happy,0.034668,7
+1,4, happy, because,0.009338,12
+1,5, because,,0.000000,-1
+2,0,The, best,0.000055,314
+2,1, best, day,0.000660,80
+2,2, day, of,0.212891,1
+2,3, of, my,0.558594,0
+2,4, my, life,0.906250,0
+2,5, life, was,0.519531,0
+2,6, was, when,0.251953,1
+2,7, when, I,0.917969,0
+2,8, I,,0.000000,-1
+3,0,Everything, is,0.016968,9
+3,1, is, wonderful,0.000206,375
+3,2, wonderful, and,0.021851,11
+3,3, and, I,0.135742,0
+3,4, I, feel,0.132812,1
+3,5, feel,,0.000000,-1
+4,0,This, is,0.019531,9
+4,1, is, the,0.169922,1
+4,2, the, most,0.007019,12
+4,3, most, amazing,0.002045,64
+4,4, amazing, thing,0.195312,0
+4,5, thing, I,0.656250,0
+4,6, I, have,0.287109,1
+4,7, have, ever,0.773438,0
+4,8, ever,,0.000000,-1
+5,0,I, love,0.000012,932
+5,1, love, this,0.051025,2
+5,2, this, so,0.007629,21
+5,3, so, much,0.921875,0
+5,4, much,",",0.154297,2
+5,5,",", it,0.131836,2
+5,6, it, makes,0.030518,2
+5,7, makes, me,0.746094,0
+5,8, me, feel,0.373047,0
+5,9, feel,,0.000000,-1
+6,0,What, a,0.003860,21
+6,1, a, beautiful,0.015198,4
+6,2, beautiful, and,0.019775,5
+6,3, and, perfect,0.004211,43
+6,4, perfect,,0.000000,-1
+7,0,I,'m,0.000216,112
+7,1,'m, thrilled,0.000003,1040
+7,2, thrilled, and,0.002075,9
+7,3, and, over,0.004395,24
+7,4, over,joy,0.582031,0
+7,5,joy,ed,1.000000,0
+7,6,ed, because,0.027344,5
+7,7, because,,0.000000,-1

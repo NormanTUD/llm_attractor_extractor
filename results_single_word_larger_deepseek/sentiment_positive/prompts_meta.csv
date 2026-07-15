@@ -1,0 +1,9 @@
+prompt_idx,prompt,predicted_next_token,predicted_next_token_id,predicted_next_prob,top5_tokens,top5_probs,n_tokens,tokens,token_ids,inference_time_ms
+0,This movie was absolutely fantastic and I, can,646,0.347656, can| couldn| cannot| want| just,0.347656|0.112793|0.060303|0.046875|0.046875,7,This| movie| was| absolutely| fantastic| and| I,1986|5700|572|10875|14622|323|358,37423.75
+1,I am so incredibly happy because, I,358,0.597656, I| today| my| the| finally,0.597656|0.125000|0.110840|0.023193|0.013184,6,I| am| so| incredibly| happy| because,40|1079|773|16815|6247|1576,44350.14
+2,The best day of my life was when I, got,2684,0.248047, got| was| received| turned| found,0.248047|0.103516|0.097168|0.075684|0.066895,9,The| best| day| of| my| life| was| when| I,785|1850|1899|315|847|2272|572|979|358,39187.70
+3,Everything is wonderful and I feel, so,773,0.296875, so| great| very| like| happy,0.296875|0.096680|0.084961|0.084961|0.042725,6,Everything| is| wonderful| and| I| feel,34964|374|11117|323|358|2666,35018.68
+4,This is the most amazing thing I have ever, seen,3884,0.660156, seen| read| heard| done| experienced,0.660156|0.057861|0.051025|0.051025|0.035156,9,This| is| the| most| amazing| thing| I| have| ever,1986|374|279|1429|7897|3166|358|614|3512,32094.75
+5,"I love this so much, it makes me feel", so,773,0.429688, so| like| good| happy| all,0.429688|0.179688|0.054688|0.042725|0.021484,10,"I| love| this| so| much|,| it| makes| me| feel",40|2948|419|773|1753|11|432|3643|752|2666,32560.23
+6,What a beautiful and perfect, day,1899,0.318359, day| world| way| morning| place,0.318359|0.059082|0.055420|0.024658|0.023071,5,What| a| beautiful| and| perfect,3838|264|6233|323|4727,40798.67
+7,I'm thrilled and overjoyed because, I,358,0.535156, I| my| today| the| we,0.535156|0.197266|0.068359|0.056396|0.012573,8,I|'m| thrilled| and| over|joy|ed| because,40|2776|37464|323|916|4123|291|1576,37364.54

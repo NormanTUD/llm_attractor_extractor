@@ -1,0 +1,334 @@
+{
+  "group_name": "sentiment_positive",
+  "description": "Strongly positive sentiment",
+  "expected_answer": "positive_continuation",
+  "category": "sentiment",
+  "n_prompts": 8,
+  "n_layers": 65,
+  "d_model": 5120,
+  "n_heads": 40,
+  "total_tokens": 60,
+  "prompts": [
+    "This movie was absolutely fantastic and I",
+    "I am so incredibly happy because",
+    "The best day of my life was when I",
+    "Everything is wonderful and I feel",
+    "This is the most amazing thing I have ever",
+    "I love this so much, it makes me feel",
+    "What a beautiful and perfect",
+    "I'm thrilled and overjoyed because"
+  ],
+  "predictions": [
+    " can",
+    " I",
+    " got",
+    " so",
+    " seen",
+    " so",
+    " day",
+    " I"
+  ],
+  "prediction_probs": [
+    0.34765625,
+    0.59765625,
+    0.248046875,
+    0.296875,
+    0.66015625,
+    0.4296875,
+    0.318359375,
+    0.53515625
+  ],
+  "top5_predictions": [
+    [
+      " can",
+      " couldn",
+      " cannot",
+      " want",
+      " just"
+    ],
+    [
+      " I",
+      " today",
+      " my",
+      " the",
+      " finally"
+    ],
+    [
+      " got",
+      " was",
+      " received",
+      " turned",
+      " found"
+    ],
+    [
+      " so",
+      " great",
+      " very",
+      " like",
+      " happy"
+    ],
+    [
+      " seen",
+      " read",
+      " heard",
+      " done",
+      " experienced"
+    ],
+    [
+      " so",
+      " like",
+      " good",
+      " happy",
+      " all"
+    ],
+    [
+      " day",
+      " world",
+      " way",
+      " morning",
+      " place"
+    ],
+    [
+      " I",
+      " my",
+      " today",
+      " the",
+      " we"
+    ]
+  ],
+  "top5_probs": [
+    [
+      0.34765625,
+      0.11279296875,
+      0.060302734375,
+      0.046875,
+      0.046875
+    ],
+    [
+      0.59765625,
+      0.125,
+      0.11083984375,
+      0.023193359375,
+      0.01318359375
+    ],
+    [
+      0.248046875,
+      0.103515625,
+      0.09716796875,
+      0.07568359375,
+      0.06689453125
+    ],
+    [
+      0.296875,
+      0.0966796875,
+      0.0849609375,
+      0.0849609375,
+      0.042724609375
+    ],
+    [
+      0.66015625,
+      0.057861328125,
+      0.051025390625,
+      0.051025390625,
+      0.03515625
+    ],
+    [
+      0.4296875,
+      0.1796875,
+      0.0546875,
+      0.042724609375,
+      0.021484375
+    ],
+    [
+      0.318359375,
+      0.05908203125,
+      0.055419921875,
+      0.024658203125,
+      0.0230712890625
+    ],
+    [
+      0.53515625,
+      0.197265625,
+      0.068359375,
+      0.056396484375,
+      0.0125732421875
+    ]
+  ],
+  "token_counts": [
+    7,
+    6,
+    9,
+    6,
+    9,
+    10,
+    5,
+    8
+  ],
+  "inference_times_ms": [
+    37423.74873999506,
+    44350.14351698919,
+    39187.70216399571,
+    35018.68265400117,
+    32094.745941009023,
+    32560.231141003896,
+    40798.66750301153,
+    37364.53846801305
+  ],
+  "total_inference_time_ms": 298798.46012801863,
+  "token_ids_per_prompt": [
+    [
+      1986,
+      5700,
+      572,
+      10875,
+      14622,
+      323,
+      358
+    ],
+    [
+      40,
+      1079,
+      773,
+      16815,
+      6247,
+      1576
+    ],
+    [
+      785,
+      1850,
+      1899,
+      315,
+      847,
+      2272,
+      572,
+      979,
+      358
+    ],
+    [
+      34964,
+      374,
+      11117,
+      323,
+      358,
+      2666
+    ],
+    [
+      1986,
+      374,
+      279,
+      1429,
+      7897,
+      3166,
+      358,
+      614,
+      3512
+    ],
+    [
+      40,
+      2948,
+      419,
+      773,
+      1753,
+      11,
+      432,
+      3643,
+      752,
+      2666
+    ],
+    [
+      3838,
+      264,
+      6233,
+      323,
+      4727
+    ],
+    [
+      40,
+      2776,
+      37464,
+      323,
+      916,
+      4123,
+      291,
+      1576
+    ]
+  ],
+  "token_texts_per_prompt": [
+    [
+      "This",
+      " movie",
+      " was",
+      " absolutely",
+      " fantastic",
+      " and",
+      " I"
+    ],
+    [
+      "I",
+      " am",
+      " so",
+      " incredibly",
+      " happy",
+      " because"
+    ],
+    [
+      "The",
+      " best",
+      " day",
+      " of",
+      " my",
+      " life",
+      " was",
+      " when",
+      " I"
+    ],
+    [
+      "Everything",
+      " is",
+      " wonderful",
+      " and",
+      " I",
+      " feel"
+    ],
+    [
+      "This",
+      " is",
+      " the",
+      " most",
+      " amazing",
+      " thing",
+      " I",
+      " have",
+      " ever"
+    ],
+    [
+      "I",
+      " love",
+      " this",
+      " so",
+      " much",
+      ",",
+      " it",
+      " makes",
+      " me",
+      " feel"
+    ],
+    [
+      "What",
+      " a",
+      " beautiful",
+      " and",
+      " perfect"
+    ],
+    [
+      "I",
+      "'m",
+      " thrilled",
+      " and",
+      " over",
+      "joy",
+      "ed",
+      " because"
+    ]
+  ]
+}
