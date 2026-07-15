@@ -1,0 +1,13 @@
+prompt_idx,prompt,predicted_next_token,predicted_next_token_id,predicted_next_prob,top5_tokens,top5_probs,n_tokens,tokens,token_ids,inference_time_ms
+0,The capital of Germany is, Berlin,19846,0.699219, Berlin| __| ____| a|____,0.699219|0.050781|0.030762|0.021118|0.012817,5,The| capital| of| Germany| is,785|6722|315|9856|374,21734.01
+1,The capital of France is, Paris,12095,0.640625, Paris| known| __| one| a,0.640625|0.059814|0.056152|0.021973|0.021973,5,The| capital| of| France| is,785|6722|315|9625|374,22653.27
+2,The capital of Japan is, Tokyo,26194,0.527344, Tokyo| __| ____| known| a,0.527344|0.062988|0.038330|0.031738|0.027954,5,The| capital| of| Japan| is,785|6722|315|6323|374,21481.86
+3,The capital of Italy is, Rome,21718,0.769531, Rome| __| known| a| ____,0.769531|0.031738|0.023193|0.015015|0.012451,5,The| capital| of| Italy| is,785|6722|315|15344|374,22076.63
+4,The capital of Spain is, Madrid,24081,0.570312, Madrid| __| ____| a| known,0.570312|0.067871|0.034180|0.032227|0.019531,5,The| capital| of| Spain| is,785|6722|315|17689|374,21631.84
+5,The capital of Brazil is, a,264,0.167969, a| Bras| ____| __|____,0.167969|0.123047|0.058105|0.054443|0.051270,5,The| capital| of| Brazil| is,785|6722|315|15948|374,21995.70
+6,The capital of Russia is, Moscow,22415,0.562500, Moscow| __| ____| a| not,0.562500|0.092285|0.033936|0.023315|0.020508,5,The| capital| of| Russia| is,785|6722|315|8359|374,21975.11
+7,The capital of China is, Beijing,26549,0.332031, Beijing| Shanghai| __| ____| in,0.332031|0.188477|0.089355|0.034912|0.034912,5,The| capital| of| China| is,785|6722|315|5616|374,22311.62
+8,The capital of Australia is, Canberra,68790,0.566406, Canberra| Sydney| __|____| a,0.566406|0.092285|0.043701|0.036133|0.030029,5,The| capital| of| Australia| is,785|6722|315|8330|374,21757.03
+9,The capital of Canada is, Ottawa,32166,0.292969, Ottawa| Toronto| __|____| ____,0.292969|0.166992|0.050781|0.044922|0.041992,5,The| capital| of| Canada| is,785|6722|315|6864|374,22467.94
+10,The capital of Egypt is, Cairo,52550,0.425781, Cairo| __|____| ____| ______,0.425781|0.094727|0.069336|0.065430|0.030884,5,The| capital| of| Egypt| is,785|6722|315|14867|374,27267.52
+11,The capital of India is, New,1532,0.361328, New| Delhi| __| a| ____,0.361328|0.206055|0.062988|0.038086|0.031494,5,The| capital| of| India| is,785|6722|315|6747|374,26821.86
