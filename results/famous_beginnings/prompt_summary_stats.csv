@@ -1,0 +1,9 @@
+prompt_idx,prompt,predicted_next_token,predicted_prob,n_tokens,inference_time_ms,mean_entropy,final_entropy,mean_norm_first_layer,mean_norm_last_layer,mean_delta_early,mean_delta_late,mean_cosine_early,mean_cosine_late,total_path_length
+0,To be or not to, be,0.914062,5,33.02,1.8122,0.9082,1.1200,98.6000,102.8039,165.4339,0.829735,0.903818,1945.1521
+1,I think therefore I, must,0.188477,4,32.57,4.3264,5.5234,1.2063,125.6036,109.2487,170.4920,0.855718,0.918505,1967.8774
+2,"One small step for man, one giant leap for", robot,0.180664,10,33.27,4.5400,8.9330,1.2219,95.4041,63.8991,133.0022,0.835059,0.904115,1942.2715
+3,In the beginning God created the, world,0.294922,6,33.36,3.4591,4.3916,1.1282,107.8824,92.6943,155.2089,0.851741,0.926400,1990.0957
+4,"It was the best of times, it was the worst of", times,0.996094,12,33.42,3.2113,0.0517,1.1521,103.3252,58.5276,127.4167,0.833995,0.909102,2055.0107
+5,"All animals are equal, but some animals are more", equal,0.929688,10,33.41,4.7081,0.8310,1.1645,116.9102,66.8591,134.1607,0.843691,0.907033,1945.1237
+6,The only thing we have to fear is, fear,0.628906,8,33.56,4.3858,3.1742,1.1328,122.0311,72.6647,148.0078,0.848715,0.908337,2111.3892
+7,I have a dream that one day,",",0.652344,7,33.27,3.5831,1.8515,1.1600,115.6918,77.2342,141.1671,0.852260,0.920425,1889.4038

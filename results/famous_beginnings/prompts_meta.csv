@@ -1,0 +1,9 @@
+prompt_idx,prompt,predicted_next_token,predicted_next_token_id,predicted_next_prob,top5_tokens,top5_probs,n_tokens,tokens,token_ids,inference_time_ms
+0,To be or not to, be,387,0.914062," be| the|,|:| a",0.914062|0.024414|0.012268|0.005798|0.004517,5,To| be| or| not| to,1249|387|476|537|311,33.02
+1,I think therefore I, must,1969,0.188477, must| should| can| conclude| have,0.188477|0.114258|0.088867|0.061279|0.061279,4,I| think| therefore| I,40|1744|8916|358,32.57
+2,"One small step for man, one giant leap for", robot,12305,0.180664, robot| CAT| mankind| machine| AI,0.180664|0.042969|0.024414|0.021606|0.017822,10,"One| small| step| for| man|,| one| giant| leap| for",3966|2613|3019|369|883|11|825|14538|31471|369,33.27
+3,In the beginning God created the, world,1879,0.294922, world| first| universe| Earth| earth,0.294922|0.245117|0.090332|0.048340|0.045410,6,In| the| beginning| God| created| the,641|279|7167|4264|3465|279,33.36
+4,"It was the best of times, it was the worst of", times,3039,0.996094, times| the| all|...| days,0.996094|0.002182|0.000587|0.000202|0.000123,12,"It| was| the| best| of| times|,| it| was| the| worst| of",2132|572|279|1850|315|3039|11|432|572|279|11785|315,33.42
+5,"All animals are equal, but some animals are more", equal,6144,0.929688, equal| than|.| like| or,0.929688|0.007111|0.005554|0.003159|0.003159,10,"All| animals| are| equal|,| but| some| animals| are| more",2403|9898|525|6144|11|714|1045|9898|525|803,33.41
+6,The only thing we have to fear is, fear,8679,0.628906, fear| the| not| that| our,0.628906|0.090820|0.037842|0.033447|0.017822,8,The| only| thing| we| have| to| fear| is,785|1172|3166|582|614|311|8679|374,33.56
+7,I have a dream that one day,",",11,0.652344,",| I| in| my| a",0.652344|0.211914|0.036865|0.019653|0.017334,7,I| have| a| dream| that| one| day,40|614|264|7904|429|825|1899,33.27

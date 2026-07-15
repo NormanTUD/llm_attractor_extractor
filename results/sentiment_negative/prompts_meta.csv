@@ -1,0 +1,9 @@
+prompt_idx,prompt,predicted_next_token,predicted_next_token_id,predicted_next_prob,top5_tokens,top5_probs,n_tokens,tokens,token_ids,inference_time_ms
+0,This movie was absolutely terrible and I, can,646,0.218750, can| don| would| couldn| really,0.218750|0.110352|0.059082|0.048828|0.043213,7,This| movie| was| absolutely| terrible| and| I,1986|5700|572|10875|17478|323|358,33.65
+1,I am so incredibly sad because, I,358,0.363281, I| of| my| the| today,0.363281|0.320312|0.133789|0.021851|0.016968,6,I| am| so| incredibly| sad| because,40|1079|773|16815|12421|1576,33.11
+2,The worst day of my life was when I, was,572,0.921875, was| were| had| started| took,0.921875|0.016846|0.015869|0.009583|0.002930,9,The| worst| day| of| my| life| was| when| I,785|11785|1899|315|847|2272|572|979|358,33.09
+3,Everything is horrible and I feel, like,1075,0.425781, like| I| the| so| nothing,0.425781|0.051025|0.044922|0.039551|0.024048,6,Everything| is| horrible| and| I| feel,34964|374|27102|323|358|2666,33.13
+4,This is the most awful thing I have ever, done,2814,0.244141, done| seen| had| heard| read,0.244141|0.147461|0.122559|0.095215|0.084473,9,This| is| the| most| awful| thing| I| have| ever,1986|374|279|1429|24607|3166|358|614|3512,32.99
+5,"I hate this so much, it makes me feel", like,1075,0.464844, like| bad| so| really| stuck,0.464844|0.194336|0.097656|0.038086|0.021729,10,"I| hate| this| so| much|,| it| makes| me| feel",40|12213|419|773|1753|11|432|3643|752|2666,34.05
+6,What a ugly and terrible, thing,3166,0.071289, thing| and| way| situation| time,0.071289|0.058838|0.027832|0.026123|0.023071,5,What| a| ugly| and| terrible,3838|264|27261|323|17478,32.83
+7,I'm devastated and heartbroken because, I,358,0.585938, I| my| this| of| the,0.585938|0.148438|0.048096|0.048096|0.033203,7,I|'m| devastated| and| heart|broken| because,40|2776|57997|323|4746|48909|1576,33.26

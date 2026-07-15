@@ -1,0 +1,310 @@
+{
+  "group_name": "plural_completion",
+  "description": "Plural noun completions",
+  "expected_answer": "location_noun",
+  "category": "syntactic",
+  "n_prompts": 8,
+  "n_layers": 29,
+  "d_model": 1536,
+  "n_heads": 12,
+  "total_tokens": 48,
+  "prompts": [
+    "The dogs are running in the",
+    "The cats are sleeping on the",
+    "The birds are flying over the",
+    "The children are playing in the",
+    "The cars are driving on the",
+    "The books are sitting on the",
+    "The flowers are growing in the",
+    "The students are studying in the"
+  ],
+  "predictions": [
+    " field",
+    " platform",
+    " lake",
+    " park",
+    " same",
+    " table",
+    " garden",
+    " city"
+  ],
+  "prediction_probs": [
+    0.27734375,
+    0.1767578125,
+    0.1826171875,
+    0.4140625,
+    0.298828125,
+    0.4375,
+    0.12890625,
+    0.11328125
+  ],
+  "top5_predictions": [
+    [
+      " field",
+      " park",
+      " backyard",
+      " garden",
+      " sky"
+    ],
+    [
+      " platform",
+      " grid",
+      " bridge",
+      " moon",
+      " edge"
+    ],
+    [
+      " lake",
+      " mountain",
+      " fence",
+      " circular",
+      " field"
+    ],
+    [
+      " park",
+      " forest",
+      " field",
+      " garden",
+      " snow"
+    ],
+    [
+      " same",
+      " circular",
+      " highway",
+      " road",
+      " straight"
+    ],
+    [
+      " table",
+      " ground",
+      " shelves",
+      " floor",
+      " edge"
+    ],
+    [
+      " garden",
+      " order",
+      " field",
+      " way",
+      " shape"
+    ],
+    [
+      " city",
+      " university",
+      " school",
+      " classroom",
+      " country"
+    ]
+  ],
+  "top5_probs": [
+    [
+      0.27734375,
+      0.16796875,
+      0.10205078125,
+      0.045166015625,
+      0.0242919921875
+    ],
+    [
+      0.1767578125,
+      0.0693359375,
+      0.02392578125,
+      0.0164794921875,
+      0.0164794921875
+    ],
+    [
+      0.1826171875,
+      0.076171875,
+      0.04638671875,
+      0.033935546875,
+      0.0299072265625
+    ],
+    [
+      0.4140625,
+      0.111328125,
+      0.08154296875,
+      0.07666015625,
+      0.03857421875
+    ],
+    [
+      0.298828125,
+      0.12451171875,
+      0.1171875,
+      0.09130859375,
+      0.033447265625
+    ],
+    [
+      0.4375,
+      0.0712890625,
+      0.055419921875,
+      0.05224609375,
+      0.04052734375
+    ],
+    [
+      0.12890625,
+      0.0537109375,
+      0.04443359375,
+      0.04443359375,
+      0.041748046875
+    ],
+    [
+      0.11328125,
+      0.10009765625,
+      0.060791015625,
+      0.05029296875,
+      0.04443359375
+    ]
+  ],
+  "token_counts": [
+    6,
+    6,
+    6,
+    6,
+    6,
+    6,
+    6,
+    6
+  ],
+  "inference_times_ms": [
+    33.59577200899366,
+    33.12337098759599,
+    33.05187099613249,
+    33.24010199867189,
+    33.15270200255327,
+    33.138170998427086,
+    33.17380200314801,
+    33.39633101131767
+  ],
+  "total_inference_time_ms": 265.8721220068401,
+  "token_ids_per_prompt": [
+    [
+      785,
+      12590,
+      525,
+      4303,
+      304,
+      279
+    ],
+    [
+      785,
+      19423,
+      525,
+      21127,
+      389,
+      279
+    ],
+    [
+      785,
+      19654,
+      525,
+      16307,
+      916,
+      279
+    ],
+    [
+      785,
+      2841,
+      525,
+      5619,
+      304,
+      279
+    ],
+    [
+      785,
+      9331,
+      525,
+      9842,
+      389,
+      279
+    ],
+    [
+      785,
+      6467,
+      525,
+      11699,
+      389,
+      279
+    ],
+    [
+      785,
+      19281,
+      525,
+      7826,
+      304,
+      279
+    ],
+    [
+      785,
+      4143,
+      525,
+      20956,
+      304,
+      279
+    ]
+  ],
+  "token_texts_per_prompt": [
+    [
+      "The",
+      " dogs",
+      " are",
+      " running",
+      " in",
+      " the"
+    ],
+    [
+      "The",
+      " cats",
+      " are",
+      " sleeping",
+      " on",
+      " the"
+    ],
+    [
+      "The",
+      " birds",
+      " are",
+      " flying",
+      " over",
+      " the"
+    ],
+    [
+      "The",
+      " children",
+      " are",
+      " playing",
+      " in",
+      " the"
+    ],
+    [
+      "The",
+      " cars",
+      " are",
+      " driving",
+      " on",
+      " the"
+    ],
+    [
+      "The",
+      " books",
+      " are",
+      " sitting",
+      " on",
+      " the"
+    ],
+    [
+      "The",
+      " flowers",
+      " are",
+      " growing",
+      " in",
+      " the"
+    ],
+    [
+      "The",
+      " students",
+      " are",
+      " studying",
+      " in",
+      " the"
+    ]
+  ]
+}

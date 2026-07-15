@@ -1,0 +1,338 @@
+{
+  "group_name": "famous_beginnings",
+  "description": "Famous text beginnings that strongly predict next words",
+  "expected_answer": "famous_next_word",
+  "category": "memorized",
+  "n_prompts": 8,
+  "n_layers": 29,
+  "d_model": 1536,
+  "n_heads": 12,
+  "total_tokens": 62,
+  "prompts": [
+    "To be or not to",
+    "I think therefore I",
+    "One small step for man, one giant leap for",
+    "In the beginning God created the",
+    "It was the best of times, it was the worst of",
+    "All animals are equal, but some animals are more",
+    "The only thing we have to fear is",
+    "I have a dream that one day"
+  ],
+  "predictions": [
+    " be",
+    " must",
+    " robot",
+    " world",
+    " times",
+    " equal",
+    " fear",
+    ","
+  ],
+  "prediction_probs": [
+    0.9140625,
+    0.1884765625,
+    0.1806640625,
+    0.294921875,
+    0.99609375,
+    0.9296875,
+    0.62890625,
+    0.65234375
+  ],
+  "top5_predictions": [
+    [
+      " be",
+      " the",
+      ",",
+      ":",
+      " a"
+    ],
+    [
+      " must",
+      " should",
+      " can",
+      " conclude",
+      " have"
+    ],
+    [
+      " robot",
+      " CAT",
+      " mankind",
+      " machine",
+      " AI"
+    ],
+    [
+      " world",
+      " first",
+      " universe",
+      " Earth",
+      " earth"
+    ],
+    [
+      " times",
+      " the",
+      " all",
+      "...",
+      " days"
+    ],
+    [
+      " equal",
+      " than",
+      ".",
+      " like",
+      " or"
+    ],
+    [
+      " fear",
+      " the",
+      " not",
+      " that",
+      " our"
+    ],
+    [
+      ",",
+      " I",
+      " in",
+      " my",
+      " a"
+    ]
+  ],
+  "top5_probs": [
+    [
+      0.9140625,
+      0.0244140625,
+      0.01226806640625,
+      0.00579833984375,
+      0.0045166015625
+    ],
+    [
+      0.1884765625,
+      0.1142578125,
+      0.0888671875,
+      0.061279296875,
+      0.061279296875
+    ],
+    [
+      0.1806640625,
+      0.04296875,
+      0.0244140625,
+      0.0216064453125,
+      0.017822265625
+    ],
+    [
+      0.294921875,
+      0.2451171875,
+      0.09033203125,
+      0.04833984375,
+      0.04541015625
+    ],
+    [
+      0.99609375,
+      0.0021820068359375,
+      0.00058746337890625,
+      0.000202178955078125,
+      0.00012302398681640625
+    ],
+    [
+      0.9296875,
+      0.007110595703125,
+      0.00555419921875,
+      0.0031585693359375,
+      0.0031585693359375
+    ],
+    [
+      0.62890625,
+      0.0908203125,
+      0.037841796875,
+      0.033447265625,
+      0.017822265625
+    ],
+    [
+      0.65234375,
+      0.2119140625,
+      0.036865234375,
+      0.0196533203125,
+      0.017333984375
+    ]
+  ],
+  "token_counts": [
+    5,
+    4,
+    10,
+    6,
+    12,
+    10,
+    8,
+    7
+  ],
+  "inference_times_ms": [
+    33.01817100145854,
+    32.56920099374838,
+    33.27266199630685,
+    33.364112008712254,
+    33.41735199501272,
+    33.41381099016871,
+    33.56222200090997,
+    33.271182008320466
+  ],
+  "total_inference_time_ms": 265.8887129946379,
+  "token_ids_per_prompt": [
+    [
+      1249,
+      387,
+      476,
+      537,
+      311
+    ],
+    [
+      40,
+      1744,
+      8916,
+      358
+    ],
+    [
+      3966,
+      2613,
+      3019,
+      369,
+      883,
+      11,
+      825,
+      14538,
+      31471,
+      369
+    ],
+    [
+      641,
+      279,
+      7167,
+      4264,
+      3465,
+      279
+    ],
+    [
+      2132,
+      572,
+      279,
+      1850,
+      315,
+      3039,
+      11,
+      432,
+      572,
+      279,
+      11785,
+      315
+    ],
+    [
+      2403,
+      9898,
+      525,
+      6144,
+      11,
+      714,
+      1045,
+      9898,
+      525,
+      803
+    ],
+    [
+      785,
+      1172,
+      3166,
+      582,
+      614,
+      311,
+      8679,
+      374
+    ],
+    [
+      40,
+      614,
+      264,
+      7904,
+      429,
+      825,
+      1899
+    ]
+  ],
+  "token_texts_per_prompt": [
+    [
+      "To",
+      " be",
+      " or",
+      " not",
+      " to"
+    ],
+    [
+      "I",
+      " think",
+      " therefore",
+      " I"
+    ],
+    [
+      "One",
+      " small",
+      " step",
+      " for",
+      " man",
+      ",",
+      " one",
+      " giant",
+      " leap",
+      " for"
+    ],
+    [
+      "In",
+      " the",
+      " beginning",
+      " God",
+      " created",
+      " the"
+    ],
+    [
+      "It",
+      " was",
+      " the",
+      " best",
+      " of",
+      " times",
+      ",",
+      " it",
+      " was",
+      " the",
+      " worst",
+      " of"
+    ],
+    [
+      "All",
+      " animals",
+      " are",
+      " equal",
+      ",",
+      " but",
+      " some",
+      " animals",
+      " are",
+      " more"
+    ],
+    [
+      "The",
+      " only",
+      " thing",
+      " we",
+      " have",
+      " to",
+      " fear",
+      " is"
+    ],
+    [
+      "I",
+      " have",
+      " a",
+      " dream",
+      " that",
+      " one",
+      " day"
+    ]
+  ]
+}

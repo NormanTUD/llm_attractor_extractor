@@ -1,0 +1,9 @@
+prompt_idx,prompt,predicted_next_token,predicted_next_token_id,predicted_next_prob,top5_tokens,top5_probs,n_tokens,tokens,token_ids,inference_time_ms
+0,The dog is running in the, northern,18172,0.205078, northern| field| southern| ocean| direction,0.205078|0.140625|0.124512|0.085449|0.070801,6,The| dog| is| running| in| the,785|5562|374|4303|304|279,33.92
+1,The cat is sleeping on the, number,1372,0.339844, number| right| left| edge| second,0.339844|0.103516|0.075684|0.035889|0.035889,6,The| cat| is| sleeping| on| the,785|8251|374|21127|389|279,33.13
+2,The bird is flying over the, water,3015,0.091309, water| ocean| Earth| lake| top,0.091309|0.052246|0.043213|0.027954|0.024658,6,The| bird| is| flying| over| the,785|11958|374|16307|916|279,35.08
+3,The child is playing in the, water,3015,0.162109, water| park| garden| pool| snow,0.162109|0.118164|0.086426|0.063477|0.052490,6,The| child| is| playing| in| the,785|1682|374|5619|304|279,33.11
+4,The car is driving on the, highway,26736,0.335938, highway| road| straight| circular| AB,0.335938|0.231445|0.131836|0.033447|0.020264,6,The| car| is| driving| on| the,785|1803|374|9842|389|279,33.19
+5,The book is sitting on the, table,1965,0.406250, table| ground| floor| edge| shelf,0.406250|0.180664|0.124023|0.058594|0.051758,6,The| book| is| sitting| on| the,785|2311|374|11699|389|279,33.32
+6,The flower is growing in the, garden,13551,0.079102, garden| shape| water| field| form,0.079102|0.048096|0.042480|0.035156|0.032959,6,The| flower| is| growing| in| the,785|22351|374|7826|304|279,33.27
+7,The student is studying in the, city,3283,0.337891, city| university| country| following| first,0.337891|0.150391|0.066406|0.037842|0.021606,6,The| student| is| studying| in| the,785|5458|374|20956|304|279,33.23

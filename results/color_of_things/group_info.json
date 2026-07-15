@@ -1,0 +1,300 @@
+{
+  "group_name": "color_of_things",
+  "description": "Colors of well-known things",
+  "expected_answer": "color_word",
+  "category": "factual_simple",
+  "n_prompts": 8,
+  "n_layers": 29,
+  "d_model": 1536,
+  "n_heads": 12,
+  "total_tokens": 43,
+  "prompts": [
+    "The color of the sky is",
+    "The color of grass is",
+    "The color of blood is",
+    "The color of snow is",
+    "The color of coal is",
+    "The color of gold is",
+    "The color of the sun is",
+    "The color of the ocean is"
+  ],
+  "predictions": [
+    " a",
+    " considered",
+    " a",
+    " white",
+    " a",
+    " sometimes",
+    " a",
+    " a"
+  ],
+  "prediction_probs": [
+    0.69140625,
+    0.12890625,
+    0.1396484375,
+    0.671875,
+    0.2265625,
+    0.09228515625,
+    0.3046875,
+    0.314453125
+  ],
+  "top5_predictions": [
+    [
+      " a",
+      " always",
+      " often",
+      " black",
+      " usually"
+    ],
+    [
+      " considered",
+      " white",
+      " a",
+      " called",
+      " often"
+    ],
+    [
+      " a",
+      " determined",
+      " given",
+      " the",
+      " red"
+    ],
+    [
+      " white",
+      " a",
+      " often",
+      " described",
+      "..."
+    ],
+    [
+      " a",
+      " often",
+      " black",
+      " an",
+      " rich"
+    ],
+    [
+      " sometimes",
+      " typically",
+      " \\",
+      " considered",
+      " represented"
+    ],
+    [
+      " a",
+      " mainly",
+      " white",
+      " yellow",
+      " primarily"
+    ],
+    [
+      " a",
+      " often",
+      " sometimes",
+      " called",
+      " blue"
+    ]
+  ],
+  "top5_probs": [
+    [
+      0.69140625,
+      0.09375,
+      0.032470703125,
+      0.0252685546875,
+      0.023681640625
+    ],
+    [
+      0.12890625,
+      0.12109375,
+      0.12109375,
+      0.06103515625,
+      0.05712890625
+    ],
+    [
+      0.1396484375,
+      0.12353515625,
+      0.03759765625,
+      0.035400390625,
+      0.029296875
+    ],
+    [
+      0.671875,
+      0.1923828125,
+      0.0179443359375,
+      0.006591796875,
+      0.005462646484375
+    ],
+    [
+      0.2265625,
+      0.10693359375,
+      0.0537109375,
+      0.04736328125,
+      0.0306396484375
+    ],
+    [
+      0.09228515625,
+      0.07666015625,
+      0.06787109375,
+      0.059814453125,
+      0.05615234375
+    ],
+    [
+      0.3046875,
+      0.052978515625,
+      0.046875,
+      0.0439453125,
+      0.041259765625
+    ],
+    [
+      0.314453125,
+      0.10888671875,
+      0.058349609375,
+      0.03759765625,
+      0.03125
+    ]
+  ],
+  "token_counts": [
+    6,
+    5,
+    5,
+    5,
+    5,
+    5,
+    6,
+    6
+  ],
+  "inference_times_ms": [
+    33.88605201325845,
+    32.617441000184044,
+    32.86889099399559,
+    32.533721008803695,
+    32.43358100007754,
+    32.686260994523764,
+    33.423341999878176,
+    33.29394200409297
+  ],
+  "total_inference_time_ms": 263.7432310148142,
+  "token_ids_per_prompt": [
+    [
+      785,
+      1894,
+      315,
+      279,
+      12884,
+      374
+    ],
+    [
+      785,
+      1894,
+      315,
+      16359,
+      374
+    ],
+    [
+      785,
+      1894,
+      315,
+      6543,
+      374
+    ],
+    [
+      785,
+      1894,
+      315,
+      11794,
+      374
+    ],
+    [
+      785,
+      1894,
+      315,
+      11497,
+      374
+    ],
+    [
+      785,
+      1894,
+      315,
+      6623,
+      374
+    ],
+    [
+      785,
+      1894,
+      315,
+      279,
+      7015,
+      374
+    ],
+    [
+      785,
+      1894,
+      315,
+      279,
+      17951,
+      374
+    ]
+  ],
+  "token_texts_per_prompt": [
+    [
+      "The",
+      " color",
+      " of",
+      " the",
+      " sky",
+      " is"
+    ],
+    [
+      "The",
+      " color",
+      " of",
+      " grass",
+      " is"
+    ],
+    [
+      "The",
+      " color",
+      " of",
+      " blood",
+      " is"
+    ],
+    [
+      "The",
+      " color",
+      " of",
+      " snow",
+      " is"
+    ],
+    [
+      "The",
+      " color",
+      " of",
+      " coal",
+      " is"
+    ],
+    [
+      "The",
+      " color",
+      " of",
+      " gold",
+      " is"
+    ],
+    [
+      "The",
+      " color",
+      " of",
+      " the",
+      " sun",
+      " is"
+    ],
+    [
+      "The",
+      " color",
+      " of",
+      " the",
+      " ocean",
+      " is"
+    ]
+  ]
+}

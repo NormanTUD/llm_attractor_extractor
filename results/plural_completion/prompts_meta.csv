@@ -1,0 +1,9 @@
+prompt_idx,prompt,predicted_next_token,predicted_next_token_id,predicted_next_prob,top5_tokens,top5_probs,n_tokens,tokens,token_ids,inference_time_ms
+0,The dogs are running in the, field,2070,0.277344, field| park| backyard| garden| sky,0.277344|0.167969|0.102051|0.045166|0.024292,6,The| dogs| are| running| in| the,785|12590|525|4303|304|279,33.60
+1,The cats are sleeping on the, platform,5339,0.176758, platform| grid| bridge| moon| edge,0.176758|0.069336|0.023926|0.016479|0.016479,6,The| cats| are| sleeping| on| the,785|19423|525|21127|389|279,33.12
+2,The birds are flying over the, lake,21800,0.182617, lake| mountain| fence| circular| field,0.182617|0.076172|0.046387|0.033936|0.029907,6,The| birds| are| flying| over| the,785|19654|525|16307|916|279,33.05
+3,The children are playing in the, park,6118,0.414062, park| forest| field| garden| snow,0.414062|0.111328|0.081543|0.076660|0.038574,6,The| children| are| playing| in| the,785|2841|525|5619|304|279,33.24
+4,The cars are driving on the, same,1852,0.298828, same| circular| highway| road| straight,0.298828|0.124512|0.117188|0.091309|0.033447,6,The| cars| are| driving| on| the,785|9331|525|9842|389|279,33.15
+5,The books are sitting on the, table,1965,0.437500, table| ground| shelves| floor| edge,0.437500|0.071289|0.055420|0.052246|0.040527,6,The| books| are| sitting| on| the,785|6467|525|11699|389|279,33.14
+6,The flowers are growing in the, garden,13551,0.128906, garden| order| field| way| shape,0.128906|0.053711|0.044434|0.044434|0.041748,6,The| flowers| are| growing| in| the,785|19281|525|7826|304|279,33.17
+7,The students are studying in the, city,3283,0.113281, city| university| school| classroom| country,0.113281|0.100098|0.060791|0.050293|0.044434,6,The| students| are| studying| in| the,785|4143|525|20956|304|279,33.40

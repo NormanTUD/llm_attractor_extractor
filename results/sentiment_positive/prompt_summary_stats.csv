@@ -1,0 +1,9 @@
+prompt_idx,prompt,predicted_next_token,predicted_prob,n_tokens,inference_time_ms,mean_entropy,final_entropy,mean_norm_first_layer,mean_norm_last_layer,mean_delta_early,mean_delta_late,mean_cosine_early,mean_cosine_late,total_path_length
+0,This movie was absolutely fantastic and I, can,0.357422,7,35.09,6.1974,3.9917,1.1314,107.2890,85.8258,153.3455,0.849500,0.927637,2041.9192
+1,I am so incredibly happy because, I,0.394531,6,33.33,3.7365,3.0523,1.2009,112.5527,83.2930,151.4112,0.859105,0.922304,1896.1183
+2,The best day of my life was when I, was,0.458984,9,33.17,4.6544,3.6033,1.1722,105.9392,67.1417,131.1244,0.836499,0.911725,1766.4236
+3,Everything is wonderful and I feel, so,0.300781,6,33.27,6.9209,5.5091,1.1788,114.5297,95.6062,163.6135,0.850201,0.917474,2081.8652
+4,This is the most amazing thing I have ever, heard,0.281250,9,33.10,5.4161,3.2765,1.1479,109.2087,73.9974,146.8422,0.847701,0.912128,2162.3931
+5,"I love this so much, it makes me feel", so,0.213867,10,33.81,4.1493,5.5132,1.2035,114.0492,63.0389,134.1038,0.837026,0.913976,2106.4714
+6,What a beautiful and perfect, day,0.192383,5,32.77,8.6021,8.2434,1.1531,107.2439,102.5877,166.4627,0.851153,0.918263,1938.4238
+7,I'm thrilled and overjoyed because, of,0.365234,8,33.43,3.3942,3.9419,1.2211,109.8431,70.2344,137.4904,0.846080,0.914001,1852.7849

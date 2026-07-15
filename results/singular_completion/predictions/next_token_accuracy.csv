@@ -1,0 +1,49 @@
+prompt_idx,token_pos,token_text,actual_next_token,next_token_prob,next_token_rank
+0,0,The, dog,0.000020,7824
+0,1, dog, is,0.047607,3
+0,2, is, running,0.004639,23
+0,3, running, in,0.062988,3
+0,4, in, the,0.129883,1
+0,5, the,,0.000000,-1
+1,0,The, cat,0.000001,90010
+1,1, cat, is,0.131836,1
+1,2, is, sleeping,0.004700,28
+1,3, sleeping, on,1.000000,0
+1,4, on, the,0.929688,0
+1,5, the,,0.000000,-1
+2,0,The, bird,0.000015,9768
+2,1, bird, is,0.126953,0
+2,2, is, flying,0.033936,5
+2,3, flying, over,0.028076,8
+2,4, over, the,0.231445,1
+2,5, the,,0.000000,-1
+3,0,The, child,0.000029,5187
+3,1, child, is,0.223633,0
+3,2, is, playing,0.049072,3
+3,3, playing, in,0.068848,2
+3,4, in, the,0.208008,1
+3,5, the,,0.000000,-1
+4,0,The, car,0.000043,3362
+4,1, car, is,0.146484,2
+4,2, is, driving,0.064941,3
+4,3, driving, on,0.441406,0
+4,4, on, the,0.059082,1
+4,5, the,,0.000000,-1
+5,0,The, book,0.000061,2253
+5,1, book, is,0.112793,2
+5,2, is, sitting,0.000150,267
+5,3, sitting, on,0.800781,0
+5,4, on, the,0.211914,1
+5,5, the,,0.000000,-1
+6,0,The, flower,0.000045,3255
+6,1, flower, is,0.015503,4
+6,2, is, growing,0.002731,39
+6,3, growing, in,0.277344,0
+6,4, in, the,0.332031,1
+6,5, the,,0.000000,-1
+7,0,The, student,0.000056,2532
+7,1, student, is,0.085449,2
+7,2, is, studying,0.001450,75
+7,3, studying, in,0.007538,7
+7,4, in, the,0.168945,1
+7,5, the,,0.000000,-1

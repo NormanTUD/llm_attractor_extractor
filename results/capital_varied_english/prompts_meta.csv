@@ -1,0 +1,13 @@
+prompt_idx,prompt,predicted_next_token,predicted_next_token_id,predicted_next_prob,top5_tokens,top5_probs,n_tokens,tokens,token_ids,inference_time_ms
+0,The capital of Germany is, ,220,0.644531, | €| represented| known| a,0.644531|0.060059|0.056396|0.049805|0.028320,5,The| capital| of| Germany| is,785|6722|315|9856|374,33.24
+1,The capital of France is, Paris,12095,0.191406, Paris| a| | represented| the,0.191406|0.079590|0.079590|0.074707|0.074707,5,The| capital| of| France| is,785|6722|315|9625|374,32.61
+2,The capital of Japan is, the,279,0.167969," the| known| ""| set| ",0.167969|0.115234|0.108398|0.084473|0.051270,5,The| capital| of| Japan| is,785|6722|315|6323|374,32.56
+3,The capital of Italy is, ,220,0.127930, | invested| represented| L| a,0.127930|0.050049|0.050049|0.044189|0.036621,5,The| capital| of| Italy| is,785|6722|315|15344|374,32.56
+4,The capital of Spain is, ,220,0.193359," | ""| \\| invested| $\",0.193359|0.085449|0.055420|0.048828|0.040527,5,The| capital| of| Spain| is,785|6722|315|17689|374,32.69
+5,The capital of Brazil is, known,3881,0.476562, known| the| represented| \\| made,0.476562|0.064453|0.053467|0.020874|0.019653,5,The| capital| of| Brazil| is,785|6722|315|15948|374,34.12
+6,The capital of Russia is, Saint,14205,0.105957, Saint| called| the| S| ,0.105957|0.093750|0.068359|0.064453|0.064453,5,The| capital| of| Russia| is,785|6722|315|8359|374,32.51
+7,The capital of China is, ,220,0.431641, | represented| approximately| located| the,0.431641|0.123535|0.075195|0.062256|0.035400,5,The| capital| of| China| is,785|6722|315|5616|374,32.69
+8,The capital of Australia is, a,264,0.074707, a| | called| located| \,0.074707|0.074707|0.070312|0.058350|0.045410,5,The| capital| of| Australia| is,785|6722|315|8330|374,34.55
+9,The capital of Canada is, represented,15251,0.152344, represented| a| | \| known,0.152344|0.098145|0.081543|0.076660|0.063477,5,The| capital| of| Canada| is,785|6722|315|6864|374,32.54
+10,The capital of Egypt is, the,279,0.129883, the| represented| known| referred| called,0.129883|0.121582|0.121582|0.039551|0.039551,5,The| capital| of| Egypt| is,785|6722|315|14867|374,32.71
+11,The capital of India is, the,279,0.247070, the| represented| approximately| | a,0.247070|0.231445|0.058594|0.051758|0.037842,5,The| capital| of| India| is,785|6722|315|6747|374,33.15
