@@ -2156,8 +2156,7 @@ def api_analyze():
         traj_data["layer_range"],
     )
 
-    return jsonify
-(result)
+    return jsonify(result)
 
 # =============================================================================
 # Main Entry Point
