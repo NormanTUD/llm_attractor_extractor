@@ -328,7 +328,7 @@ MODEL_CONFIGS = {
         "device_map": None,
     },
     "deepseek": {
-        "name": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+        "name": "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
         "dtype": torch.bfloat16,
         "device_map": "auto",
     },
@@ -521,10 +521,8 @@ def extract_everything(
     n_heads = model_info["n_heads"]
     vocab_size = model_info["vocab_size"]
 
-    SYSTEM_PREFIX = "Important: only reply with a single token.\n"
-
     for prompt_idx, prompt_text in enumerate(prompts):
-        prefixed_prompt = SYSTEM_PREFIX + prompt_text
+        prefixed_prompt = prompt_text
         t_start = time_module.perf_counter()
 
         # Tokenize single prompt (no padding issues)
