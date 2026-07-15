@@ -521,12 +521,15 @@ def extract_everything(
     n_heads = model_info["n_heads"]
     vocab_size = model_info["vocab_size"]
 
+    SYSTEM_PREFIX = "Important: only reply with a single token.\n"
+
     for prompt_idx, prompt_text in enumerate(prompts):
+        prefixed_prompt = SYSTEM_PREFIX + prompt_text
         t_start = time_module.perf_counter()
 
         # Tokenize single prompt (no padding issues)
         inputs = tokenizer(
-            prompt_text,
+            prefixed_prompt,  # <-- use prefixed version
             return_tensors="pt",
             truncation=True,
             max_length=128,
