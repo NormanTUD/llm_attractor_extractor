@@ -1,0 +1,23 @@
+prompt_idx,prompt,predicted_next_token,predicted_next_token_id,predicted_next_prob,top5_tokens,top5_probs,n_tokens,tokens,token_ids,inference_time_ms
+0,To be or not to, be,387,0.902344," be|
+| do| square| **",0.902344|0.025513|0.010681|0.004456|0.004456,14,"Important|:| only| reply| with| a| single| token|.
+|To| be| or| not| to",52280|25|1172|9851|448|264|3175|3950|624|1249|387|476|537|311,34.01
+1,I think therefore I, shall,4880,0.457031, shall| know| should| will| must,0.457031|0.102051|0.102051|0.095703|0.089844,13,"Important|:| only| reply| with| a| single| token|.
+|I| think| therefore| I",52280|25|1172|9851|448|264|3175|3950|624|40|1744|8916|358,35.13
+2,"One small step for man, one giant leap for", mankind,42284,0.431641, mankind| woman| robot| dad| pace,0.431641|0.075195|0.040039|0.024292|0.017822,19,"Important|:| only| reply| with| a| single| token|.
+|One| small| step| for| man|,| one| giant| leap| for",52280|25|1172|9851|448|264|3175|3950|624|3966|2613|3019|369|883|11|825|14538|31471|369,35.32
+3,In the beginning God created the,"
+",198,0.267578,"
+| world| heavens| Earth| universe",0.267578|0.098633|0.092773|0.063965|0.059814,15,"Important|:| only| reply| with| a| single| token|.
+|In| the| beginning| God| created| the",52280|25|1172|9851|448|264|3175|3950|624|641|279|7167|4264|3465|279,34.18
+4,"It was the best of times, it was the worst of", times,3039,1.000000," times| things|...
+|...
+
+| days",1.000000|0.000116|0.000109|0.000024|0.000023,21,"Important|:| only| reply| with| a| single| token|.
+|It| was| the| best| of| times|,| it| was| the| worst| of",52280|25|1172|9851|448|264|3175|3950|624|2132|572|279|1850|315|3039|11|432|572|279|11785|315,34.08
+5,"All animals are equal, but some animals are more", equal,6144,0.941406, equal|Equal| important| interesting| unequal,0.941406|0.011108|0.008118|0.007629|0.004364,19,"Important|:| only| reply| with| a| single| token|.
+|All| animals| are| equal|,| but| some| animals| are| more",52280|25|1172|9851|448|264|3175|3950|624|2403|9898|525|6144|11|714|1045|9898|525|803,34.13
+6,The only thing we have to fear is, fear,8679,0.710938, fear| the| not| what| that,0.710938|0.066406|0.024414|0.022949|0.022949,17,"Important|:| only| reply| with| a| single| token|.
+|The| only| thing| we| have| to| fear| is",52280|25|1172|9851|448|264|3175|3950|624|785|1172|3166|582|614|311|8679|374,35.33
+7,I have a dream that one day, I,358,0.558594," I|,| in| someone| my",0.558594|0.205078|0.066895|0.027832|0.027832,16,"Important|:| only| reply| with| a| single| token|.
+|I| have| a| dream| that| one| day",52280|25|1172|9851|448|264|3175|3950|624|40|614|264|7904|429|825|1899,34.35

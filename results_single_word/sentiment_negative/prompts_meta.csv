@@ -1,0 +1,19 @@
+prompt_idx,prompt,predicted_next_token,predicted_next_token_id,predicted_next_prob,top5_tokens,top5_probs,n_tokens,tokens,token_ids,inference_time_ms
+0,This movie was absolutely terrible and I, can,646,0.158203, can| don|'m| didn| really,0.158203|0.115723|0.051270|0.051270|0.045410,16,"Important|:| only| reply| with| a| single| token|.
+|This| movie| was| absolutely| terrible| and| I",52280|25|1172|9851|448|264|3175|3950|624|1986|5700|572|10875|17478|323|358,33.39
+1,I am so incredibly sad because, I,358,0.421875, I| of| my|...| the,0.421875|0.155273|0.120605|0.068848|0.034668,15,"Important|:| only| reply| with| a| single| token|.
+|I| am| so| incredibly| sad| because",52280|25|1172|9851|448|264|3175|3950|624|40|1079|773|16815|12421|1576,33.14
+2,The worst day of my life was when I, was,572,0.593750," was|...| had|...
+| tried",0.593750|0.055420|0.038086|0.029663|0.024536,18,"Important|:| only| reply| with| a| single| token|.
+|The| worst| day| of| my| life| was| when| I",52280|25|1172|9851|448|264|3175|3950|624|785|11785|1899|315|847|2272|572|979|358,33.46
+3,Everything is horrible and I feel, like,1075,0.394531, like| the| so| a| I,0.394531|0.068359|0.060303|0.039062|0.017334,15,"Important|:| only| reply| with| a| single| token|.
+|Everything| is| horrible| and| I| feel",52280|25|1172|9851|448|264|3175|3950|624|34964|374|27102|323|358|2666,32.97
+4,This is the most awful thing I have ever, heard,6617,0.328125, heard| seen| experienced| come| done,0.328125|0.113281|0.100098|0.088379|0.083008,18,"Important|:| only| reply| with| a| single| token|.
+|This| is| the| most| awful| thing| I| have| ever",52280|25|1172|9851|448|264|3175|3950|624|1986|374|279|1429|24607|3166|358|614|3512,33.53
+5,"I hate this so much, it makes me feel", bad,3873,0.369141," bad| like| so| sick|...
+",0.369141|0.209961|0.072754|0.038818|0.032227,19,"Important|:| only| reply| with| a| single| token|.
+|I| hate| this| so| much|,| it| makes| me| feel",52280|25|1172|9851|448|264|3175|3950|624|40|12213|419|773|1753|11|432|3643|752|2666,33.51
+6,What a ugly and terrible, way,1616,0.225586, way| situation| time| question| thing,0.225586|0.083008|0.073242|0.047363|0.032471,14,"Important|:| only| reply| with| a| single| token|.
+|What| a| ugly| and| terrible",52280|25|1172|9851|448|264|3175|3950|624|3838|264|27261|323|17478,33.31
+7,I'm devastated and heartbroken because, I,358,0.449219, I| my|...| the| this,0.449219|0.136719|0.047363|0.041748|0.032471,16,"Important|:| only| reply| with| a| single| token|.
+|I|'m| devastated| and| heart|broken| because",52280|25|1172|9851|448|264|3175|3950|624|40|2776|57997|323|4746|48909|1576,33.50

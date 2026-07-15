@@ -1,0 +1,9 @@
+prompt_idx,prompt,predicted_next_token,predicted_prob,n_tokens,inference_time_ms,mean_entropy,final_entropy,mean_norm_first_layer,mean_norm_last_layer,mean_delta_early,mean_delta_late,mean_cosine_early,mean_cosine_late,total_path_length
+0,The dogs are running in the, rain,0.151367,15,35.02,5.3642,6.6552,1.1721,102.9995,53.5028,116.0745,0.838368,0.916582,1733.5454
+1,The cats are sleeping on the, edge,0.163086,15,34.86,5.4456,8.5480,1.1761,104.2338,53.7017,115.2648,0.834984,0.915447,1713.0791
+2,The birds are flying over the, lake,0.197266,15,35.39,5.4992,7.6781,1.1732,103.5420,53.7411,117.7632,0.836815,0.916500,1879.0022
+3,The children are playing in the, park,0.316406,15,34.96,5.0677,5.4017,1.1599,105.0718,53.7133,117.5989,0.836135,0.915640,1868.8464
+4,The cars are driving on the, highway,0.285156,15,33.30,5.0240,4.8275,1.1677,104.8461,53.4163,115.3979,0.837269,0.916083,1763.0642
+5,The books are sitting on the, shelf,0.410156,15,33.16,4.7809,4.2393,1.1689,103.2748,53.6449,117.7354,0.834768,0.915769,1965.7069
+6,The flowers are growing in the, garden,0.190430,15,35.15,5.4377,7.3605,1.1626,105.4855,53.7331,117.2172,0.835082,0.914749,1794.0677
+7,The students are studying in the, same,0.183594,15,33.54,5.5827,7.6993,1.1575,106.5714,53.6132,114.9423,0.830309,0.913973,1720.1519

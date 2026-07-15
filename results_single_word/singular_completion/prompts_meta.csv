@@ -1,0 +1,18 @@
+prompt_idx,prompt,predicted_next_token,predicted_next_token_id,predicted_next_prob,top5_tokens,top5_probs,n_tokens,tokens,token_ids,inference_time_ms
+0,The dog is running in the, direction,5106,0.198242, direction| opposite| middle| rain| dark,0.198242|0.087891|0.077637|0.064453|0.044189,15,"Important|:| only| reply| with| a| single| token|.
+|The| dog| is| running| in| the",52280|25|1172|9851|448|264|3175|3950|624|785|5562|374|4303|304|279,33.49
+1,The cat is sleeping on the, edge,6821,0.451172," edge| window|
+| floor| bed",0.451172|0.030762|0.028931|0.022461|0.021118,15,"Important|:| only| reply| with| a| single| token|.
+|The| cat| is| sleeping| on| the",52280|25|1172|9851|448|264|3175|3950|624|785|8251|374|21127|389|279,33.51
+2,The bird is flying over the, lake,21800,0.259766, lake| ocean| water| island| sky,0.259766|0.095703|0.065430|0.039795|0.031006,15,"Important|:| only| reply| with| a| single| token|.
+|The| bird| is| flying| over| the",52280|25|1172|9851|448|264|3175|3950|624|785|11958|374|16307|916|279,33.34
+3,The child is playing in the, water,3015,0.150391, water| park| middle| dark| garden,0.150391|0.124512|0.103027|0.058838|0.037842,15,"Important|:| only| reply| with| a| single| token|.
+|The| child| is| playing| in| the",52280|25|1172|9851|448|264|3175|3950|624|785|1682|374|5619|304|279,33.42
+4,The car is driving on the, highway,26736,0.458984, highway| road| left| straight| A,0.458984|0.277344|0.024292|0.011475|0.006958,15,"Important|:| only| reply| with| a| single| token|.
+|The| car| is| driving| on| the",52280|25|1172|9851|448|264|3175|3950|624|785|1803|374|9842|389|279,33.41
+5,The book is sitting on the, table,1965,0.492188, table| ground| shelf| floor| desk,0.492188|0.103027|0.075195|0.058594|0.040283,15,"Important|:| only| reply| with| a| single| token|.
+|The| book| is| sitting| on| the",52280|25|1172|9851|448|264|3175|3950|624|785|2311|374|11699|389|279,33.25
+6,The flower is growing in the, flower,22351,0.055664, flower| shape| water| garden| sun,0.055664|0.043213|0.040771|0.033691|0.033691,15,"Important|:| only| reply| with| a| single| token|.
+|The| flower| is| growing| in| the",52280|25|1172|9851|448|264|3175|3950|624|785|22351|374|7826|304|279,33.21
+7,The student is studying in the, United,3639,0.298828, United| West| city| US| UK,0.298828|0.109863|0.085449|0.066406|0.048584,15,"Important|:| only| reply| with| a| single| token|.
+|The| student| is| studying| in| the",52280|25|1172|9851|448|264|3175|3950|624|785|5458|374|20956|304|279,33.32

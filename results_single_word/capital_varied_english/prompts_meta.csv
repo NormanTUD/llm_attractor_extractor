@@ -1,0 +1,27 @@
+prompt_idx,prompt,predicted_next_token,predicted_next_token_id,predicted_next_prob,top5_tokens,top5_probs,n_tokens,tokens,token_ids,inference_time_ms
+0,The capital of Germany is, Berlin,19846,0.195312, Berlin| in| ______| known| \,0.195312|0.081055|0.071777|0.071777|0.063477,14,"Important|:| only| reply| with| a| single| token|.
+|The| capital| of| Germany| is",52280|25|1172|9851|448|264|3175|3950|624|785|6722|315|9856|374,34.37
+1,The capital of France is, Paris,12095,0.090820, Paris| the| in| a| **,0.090820|0.080566|0.066406|0.062500|0.055176,14,"Important|:| only| reply| with| a| single| token|.
+|The| capital| of| France| is",52280|25|1172|9851|448|264|3175|3950|624|785|6722|315|9625|374,35.31
+2,The capital of Japan is, Tokyo,26194,0.118164, Tokyo| in| located| the| known,0.118164|0.098145|0.091797|0.091797|0.081055,14,"Important|:| only| reply| with| a| single| token|.
+|The| capital| of| Japan| is",52280|25|1172|9851|448|264|3175|3950|624|785|6722|315|6323|374,33.36
+3,The capital of Italy is, in,304,0.255859," in| **|...
+| the|:",0.255859|0.047363|0.044434|0.041748|0.041748,14,"Important|:| only| reply| with| a| single| token|.
+|The| capital| of| Italy| is",52280|25|1172|9851|448|264|3175|3950|624|785|6722|315|15344|374,33.33
+4,The capital of Spain is, Madrid,24081,0.133789," Madrid| ____| \| [|...
+",0.133789|0.071777|0.059570|0.059570|0.046387,14,"Important|:| only| reply| with| a| single| token|.
+|The| capital| of| Spain| is",52280|25|1172|9851|448|264|3175|3950|624|785|6722|315|17689|374,33.83
+5,The capital of Brazil is, known,3881,0.110840, known| **| in| \| __,0.110840|0.086426|0.086426|0.081055|0.059326,14,"Important|:| only| reply| with| a| single| token|.
+|The| capital| of| Brazil| is",52280|25|1172|9851|448|264|3175|3950|624|785|6722|315|15948|374,33.24
+6,The capital of Russia is, in,304,0.107422, in| Moscow| ______| the| \,0.107422|0.107422|0.100586|0.088867|0.044678,14,"Important|:| only| reply| with| a| single| token|.
+|The| capital| of| Russia| is",52280|25|1172|9851|448|264|3175|3950|624|785|6722|315|8359|374,33.30
+7,The capital of China is, ______,32671,0.127930, ______| \| the| **| New,0.127930|0.099609|0.050049|0.044189|0.036621,14,"Important|:| only| reply| with| a| single| token|.
+|The| capital| of| China| is",52280|25|1172|9851|448|264|3175|3950|624|785|6722|315|5616|374,33.56
+8,The capital of Australia is, \,1124,0.182617, \| __| **| the| called,0.182617|0.125977|0.092285|0.076172|0.028076,14,"Important|:| only| reply| with| a| single| token|.
+|The| capital| of| Australia| is",52280|25|1172|9851|448|264|3175|3950|624|785|6722|315|8330|374,34.56
+9,The capital of Canada is, __,1304,0.131836, __| in| \| ______| **,0.131836|0.109375|0.075195|0.066406|0.051758,14,"Important|:| only| reply| with| a| single| token|.
+|The| capital| of| Canada| is",52280|25|1172|9851|448|264|3175|3950|624|785|6722|315|6864|374,33.20
+10,The capital of Egypt is, __,1304,0.088379, __| represented| known| located| in,0.088379|0.078125|0.073242|0.057129|0.057129,14,"Important|:| only| reply| with| a| single| token|.
+|The| capital| of| Egypt| is",52280|25|1172|9851|448|264|3175|3950|624|785|6722|315|14867|374,33.32
+11,The capital of India is, New,1532,0.174805, New| ______| in|________| the,0.174805|0.120117|0.093750|0.060547|0.053223,14,"Important|:| only| reply| with| a| single| token|.
+|The| capital| of| India| is",52280|25|1172|9851|448|264|3175|3950|624|785|6722|315|6747|374,33.23

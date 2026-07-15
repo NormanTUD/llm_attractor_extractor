@@ -1,0 +1,19 @@
+prompt_idx,prompt,predicted_next_token,predicted_next_token_id,predicted_next_prob,top5_tokens,top5_probs,n_tokens,tokens,token_ids,inference_time_ms
+0,The dogs are running in the, rain,11174,0.151367, rain| field| park| dark| grass,0.151367|0.097656|0.071289|0.066895|0.052246,15,"Important|:| only| reply| with| a| single| token|.
+|The| dogs| are| running| in| the",52280|25|1172|9851|448|264|3175|3950|624|785|12590|525|4303|304|279,35.02
+1,The cats are sleeping on the, edge,6821,0.163086," edge| fence|
+| wall| floor",0.163086|0.032227|0.026611|0.025024|0.020752,15,"Important|:| only| reply| with| a| single| token|.
+|The| cats| are| sleeping| on| the",52280|25|1172|9851|448|264|3175|3950|624|785|19423|525|21127|389|279,34.86
+2,The birds are flying over the, lake,21800,0.197266, lake| sky| trees| water| field,0.197266|0.046875|0.034180|0.030273|0.025024,15,"Important|:| only| reply| with| a| single| token|.
+|The| birds| are| flying| over| the",52280|25|1172|9851|448|264|3175|3950|624|785|19654|525|16307|916|279,35.39
+3,The children are playing in the, park,6118,0.316406, park| forest| garden| snow| field,0.316406|0.168945|0.090332|0.029419|0.027588,15,"Important|:| only| reply| with| a| single| token|.
+|The| children| are| playing| in| the",52280|25|1172|9851|448|264|3175|3950|624|785|2841|525|5619|304|279,34.96
+4,The cars are driving on the, highway,26736,0.285156, highway| road| same| circular| bridge,0.285156|0.236328|0.118652|0.041016|0.028198,15,"Important|:| only| reply| with| a| single| token|.
+|The| cars| are| driving| on| the",52280|25|1172|9851|448|264|3175|3950|624|785|9331|525|9842|389|279,33.30
+5,The books are sitting on the, shelf,27645,0.410156," shelf| table|
+| top| book",0.410156|0.170898|0.066895|0.040527|0.038086,15,"Important|:| only| reply| with| a| single| token|.
+|The| books| are| sitting| on| the",52280|25|1172|9851|448|264|3175|3950|624|785|6467|525|11699|389|279,33.16
+6,The flowers are growing in the, garden,13551,0.190430, garden| sky| shape| field| me,0.190430|0.051270|0.051270|0.042480|0.040039,15,"Important|:| only| reply| with| a| single| token|.
+|The| flowers| are| growing| in| the",52280|25|1172|9851|448|264|3175|3950|624|785|19281|525|7826|304|279,35.15
+7,The students are studying in the, same,1852,0.183594, same| city| school| following| first,0.183594|0.059814|0.041016|0.033936|0.033936,15,"Important|:| only| reply| with| a| single| token|.
+|The| students| are| studying| in| the",52280|25|1172|9851|448|264|3175|3950|624|785|4143|525|20956|304|279,33.54

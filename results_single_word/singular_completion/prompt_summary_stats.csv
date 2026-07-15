@@ -1,0 +1,9 @@
+prompt_idx,prompt,predicted_next_token,predicted_prob,n_tokens,inference_time_ms,mean_entropy,final_entropy,mean_norm_first_layer,mean_norm_last_layer,mean_delta_early,mean_delta_late,mean_cosine_early,mean_cosine_late,total_path_length
+0,The dog is running in the, direction,0.198242,15,33.49,5.3048,6.4918,1.1734,102.5387,53.5953,117.1595,0.837673,0.916410,1738.1041
+1,The cat is sleeping on the, edge,0.451172,15,33.51,4.9369,5.4207,1.1827,103.3852,53.9443,117.5365,0.832794,0.914966,1881.6421
+2,The bird is flying over the, lake,0.259766,15,33.34,5.4822,6.7567,1.1761,103.7058,53.6994,117.6709,0.837052,0.916382,1920.0642
+3,The child is playing in the, water,0.150391,15,33.42,5.2784,6.9678,1.1633,105.0047,53.4498,117.7443,0.835166,0.915962,1806.5178
+4,The car is driving on the, highway,0.458984,15,33.41,4.8818,3.9562,1.1708,103.5706,53.1941,116.6075,0.835248,0.916529,1809.9381
+5,The book is sitting on the, table,0.492188,15,33.25,4.8252,3.7841,1.1702,105.0133,53.7441,118.0545,0.835197,0.915629,1933.8636
+6,The flower is growing in the, flower,0.055664,15,33.21,5.2838,8.3380,1.1668,105.2874,53.4942,117.2029,0.834350,0.914375,1790.5422
+7,The student is studying in the, United,0.298828,15,33.32,5.4505,5.3034,1.1628,106.6677,53.4614,117.1097,0.834446,0.914599,1811.1263

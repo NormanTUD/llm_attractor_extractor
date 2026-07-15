@@ -1,0 +1,17 @@
+prompt_idx,prompt,predicted_next_token,predicted_next_token_id,predicted_next_prob,top5_tokens,top5_probs,n_tokens,tokens,token_ids,inference_time_ms
+0,The color of the sky is, \,1124,0.108887, \| a| blue| dark| white,0.108887|0.096191|0.070312|0.051514|0.048340,15,"Important|:| only| reply| with| a| single| token|.
+|The| color| of| the| sky| is",52280|25|1172|9851|448|264|3175|3950|624|785|1894|315|279|12884|374,33.42
+1,The color of grass is, \,1124,0.145508, \| a| white| green| always,0.145508|0.100098|0.088379|0.047363|0.044434,14,"Important|:| only| reply| with| a| single| token|.
+|The| color| of| grass| is",52280|25|1172|9851|448|264|3175|3950|624|785|1894|315|16359|374,33.65
+2,The color of blood is, determined,10838,0.193359, determined| a| related| an|...,0.193359|0.124512|0.070801|0.040527|0.035645,14,"Important|:| only| reply| with| a| single| token|.
+|The| color| of| blood| is",52280|25|1172|9851|448|264|3175|3950|624|785|1894|315|6543|374,33.60
+3,The color of snow is, white,4158,0.632812, white| a|...| \| black,0.632812|0.037842|0.031494|0.026123|0.020264,14,"Important|:| only| reply| with| a| single| token|.
+|The| color| of| snow| is",52280|25|1172|9851|448|264|3175|3950|624|785|1894|315|11794|374,33.32
+4,The color of coal is, a,264,0.061523, a| black|...| represented| white,0.061523|0.057861|0.057861|0.054199|0.044922,14,"Important|:| only| reply| with| a| single| token|.
+|The| color| of| coal| is",52280|25|1172|9851|448|264|3175|3950|624|785|1894|315|11497|374,35.14
+5,The color of gold is, yellow,13753,0.141602, yellow| | \| red| a,0.141602|0.071289|0.055420|0.043213|0.043213,14,"Important|:| only| reply| with| a| single| token|.
+|The| color| of| gold| is",52280|25|1172|9851|448|264|3175|3950|624|785|1894|315|6623|374,34.98
+6,The color of the sun is, \,1124,0.172852, \| yellow| a| white| red,0.172852|0.098633|0.086914|0.071777|0.049561,15,"Important|:| only| reply| with| a| single| token|.
+|The| color| of| the| sun| is",52280|25|1172|9851|448|264|3175|3950|624|785|1894|315|279|7015|374,35.04
+7,The color of the ocean is, blue,6303,0.255859, blue| a| yellow| \| red,0.255859|0.073242|0.041748|0.034668|0.030518,15,"Important|:| only| reply| with| a| single| token|.
+|The| color| of| the| ocean| is",52280|25|1172|9851|448|264|3175|3950|624|785|1894|315|279|17951|374,35.28
