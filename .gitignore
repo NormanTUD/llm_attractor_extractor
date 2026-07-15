@@ -1,3 +1,4 @@
 attractor_data/
 run.sbatch.txt
-*/all_layers_all_tokens.csv
+*.out
+*.err
