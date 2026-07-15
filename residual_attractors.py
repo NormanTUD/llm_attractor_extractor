@@ -553,8 +553,7 @@ Examples:
 
     data_dir = Path(args.data_dir)
     if not data_dir.exists():
-        print(f"ERROR: Path not found: {data_dir}")
-        sys.exit(1)
+        data_dir.mkdir(parents=True, exist_ok=True)
 
     # Parse dims
     initial_dims = None
