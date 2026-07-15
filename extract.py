@@ -301,10 +301,10 @@ MODEL_CONFIGS = {
         "device_map": None,
     },
     "deepseek": {
-        "name": "deepseek-ai/DeepSeek-V2-Lite",
+        "name": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",  # klein, nativ supported
         "dtype": torch.bfloat16,
         "device_map": "auto",
-    },
+        },
 }
 
 
