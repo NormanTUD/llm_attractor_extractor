@@ -1,0 +1,9 @@
+prompt_idx,prompt,predicted_next_token,predicted_prob,n_tokens,inference_time_ms,mean_entropy,final_entropy,mean_norm_first_layer,mean_norm_last_layer,mean_delta_early,mean_delta_late,mean_cosine_early,mean_cosine_late,total_path_length
+0,This movie was absolutely terrible and I, can,0.464844,7,31495.79,3.9959,3.2399,1.6415,192.6760,177.5219,331.0576,0.942028,0.965035,8317.8691
+1,I am so incredibly sad because, I,0.470703,6,28746.62,4.1277,2.4666,1.6500,182.3530,165.5423,318.1480,0.945105,0.968312,7812.5996
+2,The worst day of my life was when I, was,0.378906,9,33476.53,3.2243,3.7328,1.7066,190.4729,151.7576,306.2546,0.938924,0.959424,7544.2129
+3,Everything is horrible and I feel, like,0.416016,6,36665.59,4.5351,2.9319,1.6020,190.0089,202.9545,356.5606,0.940194,0.967095,7958.2314
+4,This is the most awful thing I have ever, seen,0.400391,9,27317.74,4.2204,3.6305,1.6844,191.3199,147.6842,315.5116,0.942684,0.963709,8820.1719
+5,"I hate this so much, it makes me feel", so,0.380859,10,36096.31,3.5871,3.5839,1.6738,188.1400,118.3497,281.3430,0.938728,0.962855,8360.2246
+6,What a ugly and terrible, day,0.112793,5,26783.00,7.9968,7.0542,1.5948,175.7249,241.2556,382.2770,0.940091,0.965040,7721.1074
+7,I'm devastated and heartbroken because, I,0.375000,7,34101.93,3.3023,2.3049,1.5799,183.4328,148.0751,302.4194,0.943256,0.966224,7825.6606
