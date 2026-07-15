@@ -1,0 +1,9 @@
+prompt_idx,prompt,predicted_next_token,n_tokens,tokens
+0,The dogs are running in the, field,6,The| dogs| are| running| in| the
+1,The cats are sleeping on the, platform,6,The| cats| are| sleeping| on| the
+2,The birds are flying over the, lake,6,The| birds| are| flying| over| the
+3,The children are playing in the, park,6,The| children| are| playing| in| the
+4,The cars are driving on the, same,6,The| cars| are| driving| on| the
+5,The books are sitting on the, table,6,The| books| are| sitting| on| the
+6,The flowers are growing in the, order,6,The| flowers| are| growing| in| the
+7,The students are studying in the, rooms,6,The| students| are| studying| in| the

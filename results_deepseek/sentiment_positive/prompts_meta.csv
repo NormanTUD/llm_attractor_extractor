@@ -1,0 +1,9 @@
+prompt_idx,prompt,predicted_next_token,n_tokens,tokens
+0,This movie was absolutely fantastic and I, can,7,This| movie| was| absolutely| fantastic| and| I
+1,I am so incredibly happy because, I,6,I| am| so| incredibly| happy| because
+2,The best day of my life was when I, was,9,The| best| day| of| my| life| was| when| I
+3,Everything is wonderful and I feel, so,6,Everything| is| wonderful| and| I| feel
+4,This is the most amazing thing I have ever, heard,9,This| is| the| most| amazing| thing| I| have| ever
+5,"I love this so much, it makes me feel", so,10,"I| love| this| so| much|,| it| makes| me| feel"
+6,What a beautiful and perfect, day,5,What| a| beautiful| and| perfect
+7,I'm thrilled and overjoyed because, I,8,I|'m| thrilled| and| over|joy|ed| because

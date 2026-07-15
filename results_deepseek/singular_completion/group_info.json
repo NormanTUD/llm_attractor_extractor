@@ -1,0 +1,27 @@
+{
+  "group_name": "singular_completion",
+  "n_prompts": 8,
+  "n_layers": 29,
+  "d_model": 1536,
+  "total_tokens": 48,
+  "prompts": [
+    "The dog is running in the",
+    "The cat is sleeping on the",
+    "The bird is flying over the",
+    "The child is playing in the",
+    "The car is driving on the",
+    "The book is sitting on the",
+    "The flower is growing in the",
+    "The student is studying in the"
+  ],
+  "predictions": [
+    " northern",
+    " right",
+    " ocean",
+    " park",
+    " road",
+    " table",
+    " shape",
+    " city"
+  ]
+}

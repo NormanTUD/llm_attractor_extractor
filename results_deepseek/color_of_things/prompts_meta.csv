@@ -1,0 +1,9 @@
+prompt_idx,prompt,predicted_next_token,n_tokens,tokens
+0,The color of the sky is, blue,6,The| color| of| the| sky| is
+1,The color of grass is, a,5,The| color| of| grass| is
+2,The color of blood is, determined,5,The| color| of| blood| is
+3,The color of snow is, a,5,The| color| of| snow| is
+4,The color of coal is, a,5,The| color| of| coal| is
+5,The color of gold is, sometimes,5,The| color| of| gold| is
+6,The color of the sun is, primarily,6,The| color| of| the| sun| is
+7,The color of the ocean is, a,6,The| color| of| the| ocean| is

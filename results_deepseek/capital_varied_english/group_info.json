@@ -1,0 +1,35 @@
+{
+  "group_name": "capital_varied_english",
+  "n_prompts": 12,
+  "n_layers": 29,
+  "d_model": 1536,
+  "total_tokens": 60,
+  "prompts": [
+    "The capital of Germany is",
+    "The capital of France is",
+    "The capital of Japan is",
+    "The capital of Italy is",
+    "The capital of Spain is",
+    "The capital of Brazil is",
+    "The capital of Russia is",
+    "The capital of China is",
+    "The capital of Australia is",
+    "The capital of Canada is",
+    "The capital of Egypt is",
+    "The capital of India is"
+  ],
+  "predictions": [
+    " ",
+    " Paris",
+    " ",
+    " ",
+    " ",
+    " ",
+    " ",
+    " ",
+    " ",
+    " \"",
+    " invested",
+    " a"
+  ]
+}

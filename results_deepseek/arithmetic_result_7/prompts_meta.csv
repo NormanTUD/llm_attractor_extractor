@@ -1,0 +1,10 @@
+prompt_idx,prompt,predicted_next_token,n_tokens,tokens
+0,3 + 4 =, ,5,3| +| |4| =
+1,5 + 2 =, ,5,5| +| |2| =
+2,14 / 2 =, ,6,1|4| /| |2| =
+3,10 - 3 =, ,6,1|0| -| |3| =
+4,1 + 6 =, ,5,1| +| |6| =
+5,The result of adding 3 and 4 is, ,10,The| result| of| adding| |3| and| |4| is
+6,Three plus four equals, seven,4,Three| plus| four| equals
+7,Seven minus zero is,...,4,Seven| minus| zero| is
+8,If you subtract 3 from 10 you get, ,11,If| you| subtract| |3| from| |1|0| you| get

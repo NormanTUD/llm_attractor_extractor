@@ -1,0 +1,27 @@
+{
+  "group_name": "plural_completion",
+  "n_prompts": 8,
+  "n_layers": 29,
+  "d_model": 1536,
+  "total_tokens": 48,
+  "prompts": [
+    "The dogs are running in the",
+    "The cats are sleeping on the",
+    "The birds are flying over the",
+    "The children are playing in the",
+    "The cars are driving on the",
+    "The books are sitting on the",
+    "The flowers are growing in the",
+    "The students are studying in the"
+  ],
+  "predictions": [
+    " field",
+    " platform",
+    " lake",
+    " park",
+    " same",
+    " table",
+    " order",
+    " rooms"
+  ]
+}

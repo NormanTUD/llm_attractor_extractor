@@ -1,0 +1,27 @@
+{
+  "group_name": "famous_beginnings",
+  "n_prompts": 8,
+  "n_layers": 29,
+  "d_model": 1536,
+  "total_tokens": 62,
+  "prompts": [
+    "To be or not to",
+    "I think therefore I",
+    "One small step for man, one giant leap for",
+    "In the beginning God created the",
+    "It was the best of times, it was the worst of",
+    "All animals are equal, but some animals are more",
+    "The only thing we have to fear is",
+    "I have a dream that one day"
+  ],
+  "predictions": [
+    " be",
+    " can",
+    " machine",
+    " first",
+    " times",
+    " equal",
+    " fear",
+    ","
+  ]
+}

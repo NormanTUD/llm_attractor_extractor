@@ -1,0 +1,9 @@
+prompt_idx,prompt,predicted_next_token,n_tokens,tokens
+0,The dog is running in the, northern,6,The| dog| is| running| in| the
+1,The cat is sleeping on the, right,6,The| cat| is| sleeping| on| the
+2,The bird is flying over the, ocean,6,The| bird| is| flying| over| the
+3,The child is playing in the, park,6,The| child| is| playing| in| the
+4,The car is driving on the, road,6,The| car| is| driving| on| the
+5,The book is sitting on the, table,6,The| book| is| sitting| on| the
+6,The flower is growing in the, shape,6,The| flower| is| growing| in| the
+7,The student is studying in the, city,6,The| student| is| studying| in| the

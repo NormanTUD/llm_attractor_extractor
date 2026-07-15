@@ -1,0 +1,11 @@
+prompt_idx,prompt,predicted_next_token,n_tokens,tokens
+0,2 + 2 =, ,5,2| +| |2| =
+1,1 + 3 =, ,5,1| +| |3| =
+2,8 - 4 =, ,5,8| -| |4| =
+3,8 / 2 =, ,5,8| /| |2| =
+4,2 * 2 =, ,5,2| *| |2| =
+5,The result of adding 2 and 2 is, ,10,The| result| of| adding| |2| and| |2| is
+6,If you add one and three you get, four,8,If| you| add| one| and| three| you| get
+7,Two plus two equals, four,4,Two| plus| two| equals
+8,Four minus zero is,...,4,Four| minus| zero| is
+9,The square root of sixteen is, four,6,The| square| root| of| sixteen| is
