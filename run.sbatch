@@ -46,7 +46,7 @@ fi
 mkdir -p results
 
 # --- Build command ---
-CMD=(uv run extract.py results)
+CMD=(uv run extract.py --model deepseek results)
 
 echo "Running: ${CMD[*]}"
 echo "============================================"
