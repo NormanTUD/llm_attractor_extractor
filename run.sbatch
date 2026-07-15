@@ -46,7 +46,7 @@ fi
 mkdir -p results
 
 # --- Build command ---
-CMD=(uv run residual_attractors.py results)
+CMD=(uv run extract.py results)
 
 echo "Running: ${CMD[*]}"
 echo "============================================"
