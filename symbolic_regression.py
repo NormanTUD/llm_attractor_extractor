@@ -19,11 +19,6 @@ import json
 import sys
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
-
 # =============================================================================
 # Auto-restart under `uv run` (self-bootstrapping)
 # =============================================================================
@@ -62,6 +57,11 @@ def _ensure_uv_run():
         os.execvpe(uv_path, cmd, env)
 
 _ensure_uv_run()
+
+import numpy as np
+import pandas as pd
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 
 RESULTS_DIR = Path(__file__).parent / "results_single_word_larger_deepseek"
 
