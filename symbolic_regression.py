@@ -17,6 +17,7 @@ Bootstraps itself via `uv run symbolic_regression.py`.
 import argparse
 import json
 import sys
+import os
 from pathlib import Path
 
 # =============================================================================
