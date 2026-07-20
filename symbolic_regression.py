@@ -639,18 +639,257 @@ def build_stacked_data_fast(
 # Main (REPLACED)
 # =============================================================================
 
+# =============================================================================
+# NEW: Fit all dims using cross-dimension features (NO x_self, NO stacking)
+# =============================================================================
+
+def select_features_for_dim(
+    X_raw: np.ndarray,
+    y: np.ndarray,
+    dim_idx: int,
+    n_features: int,
+) -> list[int]:
+    """
+    Select top-N input dims most correlated with output dim y.
+    EXCLUDES the same dim index (no trivial identity).
+    """
+    n_dims = X_raw.shape[1]
+    y_centered = y - y.mean()
+    y_std = y.std()
+    if y_std < 1e-12:
+        # Pick random dims excluding self
+        candidates = [i for i in range(n_dims) if i != dim_idx]
+        return candidates[:n_features]
+
+    X_centered = X_raw - X_raw.mean(axis=0)
+    X_std = X_raw.std(axis=0) + 1e-12
+
+    # Pearson correlation magnitude
+    corr = np.abs((X_centered * y_centered[:, None]).mean(axis=0)) / (X_std * y_std)
+    # Zero out self-dim
+    corr[dim_idx] = -1.0
+
+    top_idxs = np.argsort(corr)[::-1][:n_features]
+    return top_idxs.tolist()
+
+
+def fit_all_dims_cross(
+    X_raw: np.ndarray,
+    Y_target: np.ndarray,
+    input_dim_names: list[str],
+    output_dim_names: list[str],
+    n_features: int,
+    args: argparse.Namespace,
+    plotter=None,
+) -> tuple[np.ndarray, np.ndarray, list[dict]]:
+    """
+    For EACH output dim, select top correlated INPUT dims (excluding self),
+    then run SR. Returns predictions, R² per dim, and equation info.
+
+    Uses a single PySR call per dim but runs them all.
+    """
+    from pysr import PySRRegressor
+
+    n_samples, n_dims = Y_target.shape
+    Y_pred = np.zeros_like(Y_target)
+    r2_per_dim = np.zeros(n_dims)
+    all_eq_info = []
+
+    print(f"    Fitting {n_dims} dims, {n_features} cross-features each, {n_samples} samples")
+    print(f"    SR: {args.iterations} iters, maxsize={args.maxsize}")
+
+    for d in range(n_dims):
+        y = Y_target[:, d]
+        y_std = y.std()
+
+        if y_std < 1e-10:
+            Y_pred[:, d] = y.mean()
+            r2_per_dim[d] = 0.0
+            all_eq_info.append({"dim": output_dim_names[d], "equation": "0", "r2": 0.0,
+                                "features": [], "loss": 0.0, "complexity": 0})
+            continue
+
+        # Select features (other dims, not self)
+        feat_idxs = select_features_for_dim(X_raw, y, d, n_features)
+        feat_names = [input_dim_names[i] for i in feat_idxs]
+        X_sel = X_raw[:, feat_idxs]
+
+        # Normalize
+        x_mean = X_sel.mean(axis=0)
+        x_std_arr = X_sel.std(axis=0) + 1e-12
+        X_norm = (X_sel - x_mean) / x_std_arr
+        y_mean = y.mean()
+        y_norm = (y - y_mean) / y_std
+
+        model = PySRRegressor(
+            niterations=args.iterations,
+            population_size=args.population,
+            parsimony=args.parsimony,
+            maxsize=args.maxsize,
+            binary_operators=args.binary_ops.split(","),
+            unary_operators=args.unary_ops.split(","),
+            progress=False,
+            batching=True,
+            batch_size=min(256, n_samples),
+            random_state=42,
+            update=False,
+            verbosity=0,
+        )
+
+        model.fit(X_norm, y_norm, variable_names=feat_names)
+
+        y_pred_norm = model.predict(X_norm)
+        Y_pred[:, d] = y_pred_norm * y_std + y_mean
+
+        ss_res = np.sum((y - Y_pred[:, d]) ** 2)
+        ss_tot = np.sum((y - y_mean) ** 2)
+        r2_per_dim[d] = 1 - ss_res / ss_tot if ss_tot > 1e-12 else 0.0
+
+        best_idx = model.equations_["loss"].idxmin()
+        eq_str = str(model.equations_.loc[best_idx, "equation"])
+        loss_val = float(model.equations_.loc[best_idx, "loss"])
+        complexity = int(model.equations_.loc[best_idx, "complexity"])
+
+        all_eq_info.append({
+            "dim": output_dim_names[d],
+            "equation": eq_str,
+            "r2": float(r2_per_dim[d]),
+            "features": feat_names,
+            "loss": loss_val,
+            "complexity": complexity,
+        })
+
+        # Progress
+        if (d + 1) % 50 == 0 or d == n_dims - 1 or (d + 1) <= 5:
+            print(f"      [{d+1:>5}/{n_dims}] {output_dim_names[d]} = {eq_str}")
+            print(f"               R²={r2_per_dim[d]:.4f}  features={feat_names}")
+            print(f"               median R² so far: {np.median(r2_per_dim[:d+1]):.4f}")
+
+        # Update plot every 100 dims
+        if plotter is not None and ((d + 1) % 100 == 0 or d == n_dims - 1):
+            _update_progress_plot(plotter, Y_target, Y_pred, r2_per_dim, d + 1,
+                                  n_dims, n_samples, all_eq_info, args)
+
+    return Y_pred, r2_per_dim, all_eq_info
+
+
+def _update_progress_plot(
+    plotter, Y_true, Y_pred, r2_per_dim, n_done, n_total, n_samples, eq_info, args
+):
+    """Update the single window with current progress."""
+    fig = plotter.ensure_figure()
+    fig.clf()
+
+    gs = GridSpec(2, 3, figure=fig, hspace=0.4, wspace=0.3)
+
+    # Only show dims that are done
+    Y_t = Y_true[:, :n_done]
+    Y_p = Y_pred[:, :n_done]
+    r2_done = r2_per_dim[:n_done]
+
+    # Panel 1: Heatmap real (use percentile clipping for visibility)
+    ax1 = fig.add_subplot(gs[0, 0])
+    vmin_p = np.percentile(Y_t, 2)
+    vmax_p = np.percentile(Y_t, 98)
+    im1 = ax1.imshow(Y_t.T, aspect='auto', cmap='RdBu_r', vmin=vmin_p, vmax=vmax_p)
+    ax1.set_xlabel(f"Sample (0..{n_samples-1})")
+    ax1.set_ylabel(f"Dim (0..{n_done-1})")
+    ax1.set_title(f"REAL — {n_samples}×{n_done}", fontweight='bold')
+    plt.colorbar(im1, ax=ax1, fraction=0.046)
+
+    # Panel 2: Heatmap predicted
+    ax2 = fig.add_subplot(gs[0, 1])
+    im2 = ax2.imshow(Y_p.T, aspect='auto', cmap='RdBu_r', vmin=vmin_p, vmax=vmax_p)
+    ax2.set_xlabel(f"Sample (0..{n_samples-1})")
+    ax2.set_ylabel(f"Dim (0..{n_done-1})")
+    ax2.set_title(f"PREDICTED — {n_done}/{n_total} done", fontweight='bold')
+    plt.colorbar(im2, ax=ax2, fraction=0.046)
+
+    # Panel 3: Error heatmap (percentile-clipped)
+    ax3 = fig.add_subplot(gs[0, 2])
+    error = np.abs(Y_t - Y_p)
+    err_vmax = np.percentile(error, 95)
+    im3 = ax3.imshow(error.T, aspect='auto', cmap='hot', vmin=0, vmax=err_vmax)
+    ax3.set_xlabel(f"Sample (0..{n_samples-1})")
+    ax3.set_ylabel(f"Dim (0..{n_done-1})")
+    ax3.set_title(f"|Error| MAE={error.mean():.4f}", fontweight='bold')
+    plt.colorbar(im3, ax=ax3, fraction=0.046)
+
+    # Panel 4: R² distribution
+    ax4 = fig.add_subplot(gs[1, 0])
+    valid_r2 = r2_done[r2_done != 0]  # exclude zero-variance skipped
+    if len(valid_r2) > 0:
+        ax4.hist(valid_r2, bins=min(60, max(10, len(valid_r2)//5)),
+                 color='steelblue', alpha=0.8, edgecolor='black', linewidth=0.3)
+        ax4.axvline(np.median(valid_r2), color='red', linewidth=2, linestyle='--',
+                    label=f'Median={np.median(valid_r2):.3f}')
+        ax4.axvline(np.mean(valid_r2), color='orange', linewidth=2, linestyle=':',
+                    label=f'Mean={np.mean(valid_r2):.3f}')
+        ax4.legend(fontsize=9)
+    ax4.set_xlabel("R² per dim")
+    ax4.set_ylabel("Count")
+    ax4.set_title(f"R² — {(r2_done>0.9).sum()}/{n_done} > 0.9", fontweight='bold')
+
+    # Panel 5: Signal overlay — pick 5 best and 5 worst dims
+    ax5 = fig.add_subplot(gs[1, 1])
+    sample_idx = np.arange(n_samples)
+    sorted_dims = np.argsort(r2_done)
+    # Best 3
+    for rank, d in enumerate(sorted_dims[-3:]):
+        ax5.plot(sample_idx, Y_t[:, d], color='steelblue', alpha=0.6, linewidth=1.0)
+        ax5.plot(sample_idx, Y_p[:, d], color='orangered', alpha=0.6, linewidth=1.0, linestyle='--')
+    ax5.set_xlabel(f"Sample (all {n_samples})")
+    ax5.set_ylabel("Activation")
+    ax5.set_title("Best 3 dims: real(blue) vs pred(red)", fontweight='bold')
+    ax5.grid(True, alpha=0.2)
+
+    # Panel 6: Info text
+    ax6 = fig.add_subplot(gs[1, 2])
+    ax6.axis('off')
+    info = f"Progress: {n_done}/{n_total} dims\n\n"
+    info += f"R² stats (done so far):\n"
+    info += f"  Mean:   {np.mean(r2_done):.4f}\n"
+    info += f"  Median: {np.median(r2_done):.4f}\n"
+    info += f"  >0.9:   {(r2_done>0.9).sum()}/{n_done}\n"
+    info += f"  >0.5:   {(r2_done>0.5).sum()}/{n_done}\n"
+    info += f"  <0:     {(r2_done<0).sum()}/{n_done}\n\n"
+    info += f"Latest equations:\n"
+    for ei in eq_info[-3:]:
+        eq_short = ei['equation'][:50] + "..." if len(ei['equation']) > 50 else ei['equation']
+        info += f"  {ei['dim']}:\n    {eq_short}\n    R²={ei['r2']:.4f} feat={ei['features'][:3]}\n"
+
+    ax6.text(0.02, 0.98, info, transform=ax6.transAxes, fontsize=8,
+             verticalalignment='top', fontfamily='monospace',
+             bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.8))
+
+    fig.suptitle(f"Fitting {n_done}/{n_total} dims — cross-dimension SR", fontsize=12, fontweight='bold')
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+    plt.pause(0.05)
+
+
+# =============================================================================
+# Main
+# =============================================================================
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Symbolic regression: ONE equation for the ENTIRE layer transformation",
+        description="Symbolic regression: approximate each output dim using OTHER input dims",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Finds a SINGLE symbolic equation that describes what a layer does to
-ANY dimension. Uses stacked (sample × dim) data so SR has enough rows.
+For each output dimension d, selects the top-N most correlated INPUT dimensions
+(EXCLUDING dim d itself) and finds a symbolic equation:
+
+    output_dim_d = f(input_dim_a, input_dim_b, input_dim_c, ...)
+
+This models the real cross-dimension interactions (attention, MLP mixing).
+No trivial identity. Real dimension names in equations.
 
 Examples:
   uv run symbolic_regression.py -l 20
-  uv run symbolic_regression.py -l 20 --residual
-  uv run symbolic_regression.py -l 10-15
+  uv run symbolic_regression.py -l 20 --n-features 6 --residual
+  uv run symbolic_regression.py -l 20 --subsample-dims 200  # faster: only 200 dims
   uv run symbolic_regression.py --list-experiments
 """,
     )
@@ -660,18 +899,18 @@ Examples:
     parser.add_argument("--layers", "-l", type=str, default="20")
 
     parser.add_argument("--residual", action="store_true",
-                        help="Model residual (what layer adds) instead of full output")
+                        help="Model residual (output - input) instead of full output")
+    parser.add_argument("--n-features", type=int, default=6,
+                        help="Number of cross-dim input features per target. Default: 6")
     parser.add_argument("--subsample-dims", type=int, default=None,
-                        help="Subsample this many dims (for speed). Default: all 5120")
-    parser.add_argument("--subsample-rows", type=int, default=50000,
-                        help="Max stacked rows for SR (random subsample). Default: 50000")
+                        help="Only fit this many dims (random subset). Default: all")
 
     # SR parameters
-    parser.add_argument("--iterations", "-i", type=int, default=60)
-    parser.add_argument("--population", type=int, default=50)
-    parser.add_argument("--parsimony", type=float, default=0.003)
-    parser.add_argument("--maxsize", type=int, default=35)
-    parser.add_argument("--binary-ops", type=str, default="+,*,/,^,-")
+    parser.add_argument("--iterations", "-i", type=int, default=30)
+    parser.add_argument("--population", type=int, default=33)
+    parser.add_argument("--parsimony", type=float, default=0.005)
+    parser.add_argument("--maxsize", type=int, default=25)
+    parser.add_argument("--binary-ops", type=str, default="+,*,/,-")
     parser.add_argument("--unary-ops", type=str, default="sin,cos,exp,log,sqrt,tanh,abs")
 
     parser.add_argument("--output", "-o", type=str, default=None)
@@ -711,13 +950,13 @@ Examples:
         sys.exit(1)
 
     print("=" * 90)
-    print("SYMBOLIC REGRESSION — ONE EQUATION PER LAYER (ALL DIMS)")
+    print("SYMBOLIC REGRESSION — CROSS-DIMENSION (REAL FEATURES, NO IDENTITY)")
     print("=" * 90)
     print(f"  Experiment:     {exp_name}")
     print(f"  Layer(s):       {layers}")
     print(f"  Mode:           {'RESIDUAL' if args.residual else 'FULL OUTPUT'}")
+    print(f"  Features/dim:   {args.n_features} (top correlated OTHER dims)")
     print(f"  Subsample dims: {args.subsample_dims or 'all'}")
-    print(f"  Max SR rows:    {args.subsample_rows}")
     print(f"  SR iterations:  {args.iterations}")
     print(f"  SR maxsize:     {args.maxsize}")
     print("=" * 90)
@@ -741,6 +980,8 @@ Examples:
 
         X_raw = io_data["X_raw"]
         Y_raw = io_data["Y_raw"]
+        input_dim_names = io_data["input_dim_names"]
+        output_dim_names = io_data["output_dim_names"]
         n_samples = io_data["n_samples"]
         n_dims = io_data["n_dims"]
 
@@ -756,214 +997,59 @@ Examples:
             rng = np.random.default_rng(42)
             dim_idxs = rng.choice(n_dims, args.subsample_dims, replace=False)
             dim_idxs.sort()
-            X_sub = X_raw[:, dim_idxs]
+            # Only subsample OUTPUT dims, keep ALL input dims available as features
             Y_sub = Y_target[:, dim_idxs]
+            out_names_sub = [output_dim_names[i] for i in dim_idxs]
             n_dims_used = args.subsample_dims
         else:
-            X_sub = X_raw
             Y_sub = Y_target
+            out_names_sub = output_dim_names
             dim_idxs = np.arange(n_dims)
             n_dims_used = n_dims
 
-        print(f"  Samples: {n_samples}, Dims used: {n_dims_used}")
-        print(f"  Stacking into (samples × dims) = {n_samples * n_dims_used} rows...")
+        print(f"  Samples: {n_samples}, Output dims to fit: {n_dims_used}")
+        print(f"  All {n_dims} input dims available as feature candidates")
 
-        # Build stacked data
-        X_stacked, y_stacked, feature_names = build_stacked_data_fast(X_sub, Y_sub)
-        total_rows = len(y_stacked)
-        print(f"  Stacked shape: X={X_stacked.shape}, y={y_stacked.shape}")
-
-        # Subsample rows if too many
-        if total_rows > args.subsample_rows:
-            rng = np.random.default_rng(42)
-            row_idxs = rng.choice(total_rows, args.subsample_rows, replace=False)
-            X_fit = X_stacked[row_idxs]
-            y_fit = y_stacked[row_idxs]
-            print(f"  Subsampled to {args.subsample_rows} rows for SR")
-        else:
-            X_fit = X_stacked
-            y_fit = y_stacked
-
-        # Normalize
-        x_scaler = StandardScaler()
-        X_fit_norm = x_scaler.fit_transform(X_fit)
-        y_mean = y_fit.mean()
-        y_std_val = y_fit.std()
-        y_fit_norm = (y_fit - y_mean) / (y_std_val + 1e-12)
-
-        # Run SR — ONE equation for the entire layer
-        print(f"\n  Running SR for ONE universal equation...")
-        print(f"  Features: {feature_names}")
-        print(f"  (x_self=input at same dim, x_mean/std/min/max=sample stats,")
-        print(f"   x_rank=rank within sample, dim_mean/std=dim stats across samples)")
-
-        from pysr import PySRRegressor
-
-        model = PySRRegressor(
-            niterations=args.iterations,
-            population_size=args.population,
-            parsimony=args.parsimony,
-            maxsize=args.maxsize,
-            binary_operators=args.binary_ops.split(","),
-            unary_operators=args.unary_ops.split(","),
-            progress=True,
-            batching=True,
-            batch_size=min(512, len(X_fit_norm)),
-            random_state=42,
-            update=False,
+        # Fit all dims with cross-dimension features
+        Y_pred, r2_per_dim, eq_info = fit_all_dims_cross(
+            X_raw=X_raw,
+            Y_target=Y_sub,
+            input_dim_names=input_dim_names,
+            output_dim_names=out_names_sub,
+            n_features=args.n_features,
+            args=args,
+            plotter=plotter,
         )
 
-        model.fit(X_fit_norm, y_fit_norm, variable_names=feature_names)
-
-        # Get best equation
-        eqs_df = model.equations_
-        if eqs_df is None or len(eqs_df) == 0:
-            print("  ERROR: No equations found!")
-            continue
-
-        best_idx = eqs_df["loss"].idxmin()
-        best_row = eqs_df.iloc[best_idx]
-        best_eq = str(model.sympy())
-
+        # Final stats
         print(f"\n  {'='*70}")
-        print(f"  UNIVERSAL EQUATION for Layer {layer_idx-1}→{layer_idx} ({mode_label}):")
-        print(f"  output = {best_eq}")
-        print(f"  Loss: {best_row['loss']:.6e}  Complexity: {int(best_row['complexity'])}")
+        print(f"  FINAL RESULTS — Layer {layer_idx-1}→{layer_idx} ({mode_label})")
         print(f"  {'='*70}")
-
-        # Print full Pareto front
-        print(f"\n  Pareto front:")
-        print(f"  {'Complexity':<12} {'Loss':<14} Equation")
-        print(f"  {'-'*80}")
-        for _, row in eqs_df.iterrows():
-            print(f"  {int(row['complexity']):<12} {row['loss']:<14.6e} {row['equation']}")
-
-        # Predict on ALL data (not just subsample) for plotting
-        X_all_norm = x_scaler.transform(X_stacked)
-        y_pred_norm = model.predict(X_all_norm)
-        y_pred_all = y_pred_norm * (y_std_val + 1e-12) + y_mean
-
-        # Reshape back to (n_samples, n_dims_used)
-        Y_pred_matrix = y_pred_all.reshape(n_samples, n_dims_used)
-        Y_true_matrix = Y_sub
-
-        # R² per dim
-        r2_per_dim = np.zeros(n_dims_used)
-        for d in range(n_dims_used):
-            ss_res = np.sum((Y_true_matrix[:, d] - Y_pred_matrix[:, d]) ** 2)
-            ss_tot = np.sum((Y_true_matrix[:, d] - Y_true_matrix[:, d].mean()) ** 2)
-            r2_per_dim[d] = 1 - ss_res / ss_tot if ss_tot > 1e-12 else 0.0
-
-        # Overall R²
-        ss_res_total = np.sum((y_stacked - y_pred_all) ** 2)
-        ss_tot_total = np.sum((y_stacked - y_stacked.mean()) ** 2)
-        r2_total = 1 - ss_res_total / ss_tot_total if ss_tot_total > 1e-12 else 0.0
-
-        print(f"\n  Overall R²: {r2_total:.4f}")
-        print(f"  Per-dim R²: mean={np.mean(r2_per_dim):.4f}, median={np.median(r2_per_dim):.4f}")
+        print(f"  Mean R²:   {np.mean(r2_per_dim):.4f}")
+        print(f"  Median R²: {np.median(r2_per_dim):.4f}")
         print(f"  Dims R²>0.9: {(r2_per_dim > 0.9).sum()}/{n_dims_used}")
         print(f"  Dims R²>0.5: {(r2_per_dim > 0.5).sum()}/{n_dims_used}")
+        print(f"  Dims R²<0:   {(r2_per_dim < 0).sum()}/{n_dims_used}")
 
-        # Plot in single window
-        if plotter is not None:
-            fig = plotter.ensure_figure()
-            fig.clf()
-
-            gs = GridSpec(2, 3, figure=fig, hspace=0.4, wspace=0.3)
-
-            # Panel 1: Heatmap real
-            ax1 = fig.add_subplot(gs[0, 0])
-            vmin = min(Y_true_matrix.min(), Y_pred_matrix.min())
-            vmax = max(Y_true_matrix.max(), Y_pred_matrix.max())
-            im1 = ax1.imshow(Y_true_matrix.T, aspect='auto', cmap='viridis', vmin=vmin, vmax=vmax)
-            ax1.set_xlabel(f"Sample (0..{n_samples-1})")
-            ax1.set_ylabel(f"Dim (0..{n_dims_used-1})")
-            ax1.set_title(f"REAL — {n_samples}×{n_dims_used}", fontweight='bold')
-            plt.colorbar(im1, ax=ax1, fraction=0.046)
-
-            # Panel 2: Heatmap predicted
-            ax2 = fig.add_subplot(gs[0, 1])
-            im2 = ax2.imshow(Y_pred_matrix.T, aspect='auto', cmap='viridis', vmin=vmin, vmax=vmax)
-            ax2.set_xlabel(f"Sample (0..{n_samples-1})")
-            ax2.set_ylabel(f"Dim (0..{n_dims_used-1})")
-            ax2.set_title(f"PREDICTED — R²={r2_total:.4f}", fontweight='bold')
-            plt.colorbar(im2, ax=ax2, fraction=0.046)
-
-            # Panel 3: Error heatmap
-            ax3 = fig.add_subplot(gs[0, 2])
-            error = np.abs(Y_true_matrix - Y_pred_matrix)
-            im3 = ax3.imshow(error.T, aspect='auto', cmap='hot')
-            ax3.set_xlabel(f"Sample (0..{n_samples-1})")
-            ax3.set_ylabel(f"Dim (0..{n_dims_used-1})")
-            ax3.set_title(f"|Error| MAE={error.mean():.4f}", fontweight='bold')
-            plt.colorbar(im3, ax=ax3, fraction=0.046)
-
-            # Panel 4: R² distribution
-            ax4 = fig.add_subplot(gs[1, 0])
-            ax4.hist(r2_per_dim, bins=60, color='steelblue', alpha=0.8, edgecolor='black', linewidth=0.3)
-            ax4.axvline(np.median(r2_per_dim), color='red', linewidth=2, linestyle='--',
-                        label=f'Median={np.median(r2_per_dim):.3f}')
-            ax4.set_xlabel("R² per dim")
-            ax4.set_ylabel("Count")
-            ax4.set_title(f"R² distribution — {(r2_per_dim>0.9).sum()}/{n_dims_used} > 0.9", fontweight='bold')
-            ax4.legend()
-
-            # Panel 5: Signal overlay (ALL samples × ALL dims superimposed)
-            ax5 = fig.add_subplot(gs[1, 1])
-            sample_idx = np.arange(n_samples)
-            step = max(1, n_dims_used // 100)
-            for d in range(0, n_dims_used, step):
-                ax5.plot(sample_idx, Y_true_matrix[:, d], color='steelblue', alpha=0.03, linewidth=0.5)
-                ax5.plot(sample_idx, Y_pred_matrix[:, d], color='orangered', alpha=0.03, linewidth=0.5)
-            ax5.plot(sample_idx, Y_true_matrix.mean(axis=1), color='blue', linewidth=2, label='Real mean')
-            ax5.plot(sample_idx, Y_pred_matrix.mean(axis=1), color='red', linewidth=2, linestyle='--', label='Pred mean')
-            ax5.set_xlabel(f"Sample (all {n_samples})")
-            ax5.set_ylabel("Activation")
-            ax5.set_title(f"All dims overlaid ({n_dims_used} dims × {n_samples} samples)", fontweight='bold')
-            ax5.legend()
-
-            # Panel 6: Pareto front
-            ax6 = fig.add_subplot(gs[1, 2])
-            ax6.semilogy(eqs_df["complexity"], eqs_df["loss"], 'o-', color='darkgreen', markersize=6)
-            ax6.semilogy(best_row["complexity"], best_row["loss"], '*', color='red', markersize=15)
-            ax6.set_xlabel("Complexity")
-            ax6.set_ylabel("Loss")
-            ax6.set_title("Pareto Front", fontweight='bold')
-            ax6.grid(True, alpha=0.3)
-
-            # Equation at bottom
-            eq_short = best_eq if len(best_eq) < 100 else best_eq[:97] + "..."
-            fig.text(0.5, 0.01, f"Layer {layer_idx-1}→{layer_idx}: output = {eq_short}",
-                     ha='center', fontsize=9, style='italic',
-                     bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.8))
-
-            fig.suptitle(
-                f"Layer {layer_idx-1}→{layer_idx} ({mode_label}) — ONE equation for ALL {n_dims_used} dims | R²={r2_total:.4f}",
-                fontsize=12, fontweight='bold'
-            )
-            plt.tight_layout(rect=[0, 0.04, 1, 0.95])
-            fig.canvas.draw()
-            fig.canvas.flush_events()
-            plt.pause(1.0)
+        # Print top 10 best equations
+        sorted_by_r2 = sorted(eq_info, key=lambda x: x["r2"], reverse=True)
+        print(f"\n  Top 10 best-fit dimensions:")
+        for ei in sorted_by_r2[:10]:
+            print(f"    {ei['dim']} = {ei['equation']}")
+            print(f"      R²={ei['r2']:.4f}  features={ei['features']}")
 
         layer_result = {
             "input_layer": layer_idx - 1,
             "output_layer": layer_idx,
             "mode": mode_label,
-            "equation": best_eq,
-            "loss": float(best_row["loss"]),
-            "complexity": int(best_row["complexity"]),
-            "r2_total": float(r2_total),
+            "n_dims_fitted": n_dims_used,
+            "n_samples": n_samples,
+            "n_features_per_dim": args.n_features,
             "r2_mean": float(np.mean(r2_per_dim)),
             "r2_median": float(np.median(r2_per_dim)),
             "dims_above_0.9": int((r2_per_dim > 0.9).sum()),
-            "n_dims": n_dims_used,
-            "n_samples": n_samples,
-            "features": feature_names,
-            "pareto_front": [
-                {"complexity": int(row["complexity"]), "loss": float(row["loss"]), "equation": str(row["equation"])}
-                for _, row in eqs_df.iterrows()
-            ],
+            "dims_above_0.5": int((r2_per_dim > 0.5).sum()),
+            "equations": eq_info,
         }
         all_results.append(layer_result)
 
@@ -973,10 +1059,10 @@ Examples:
     print("=" * 90)
     for res in all_results:
         print(f"\n  Layer {res['input_layer']}→{res['output_layer']} ({res['mode']}):")
-        print(f"    output = {res['equation']}")
-        print(f"    R²={res['r2_total']:.4f} (mean per-dim={res['r2_mean']:.4f}, median={res['r2_median']:.4f})")
-        print(f"    Dims R²>0.9: {res['dims_above_0.9']}/{res['n_dims']}")
-        print(f"    Loss={res['loss']:.4e}  Complexity={res['complexity']}")
+        print(f"    {res['n_dims_fitted']} dims fitted, {res['n_features_per_dim']} features each")
+        print(f"    R²: mean={res['r2_mean']:.4f}, median={res['r2_median']:.4f}")
+        print(f"    Dims R²>0.9: {res['dims_above_0.9']}/{res['n_dims_fitted']}")
+        print(f"    Dims R²>0.5: {res['dims_above_0.5']}/{res['n_dims_fitted']}")
     print("=" * 90)
 
     if args.output:
