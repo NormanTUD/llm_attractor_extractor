@@ -163,12 +163,13 @@ def run_symbolic_regression(
         maxsize=args.maxsize,
         binary_operators=args.binary_ops.split(","),
         unary_operators=args.unary_ops.split(","),
-        deterministic=True,
-        random_state=42,
+        # deterministic=True,      # remove
+        # random_state=42,         # remove
         progress=False,
         batching=True,
         batch_size=min(64, len(X)),
     )
+
     model.fit(X, y, variable_names=feature_names)
     return model
 
