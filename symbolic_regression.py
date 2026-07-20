@@ -164,7 +164,6 @@ def run_symbolic_regression(
         binary_operators=args.binary_ops.split(","),
         unary_operators=args.unary_ops.split(","),
         deterministic=True,
-        random_seed=42,
         progress=False,
         batching=True,
         batch_size=min(64, len(X)),
