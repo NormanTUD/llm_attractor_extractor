@@ -184,6 +184,16 @@ def build_feature_matrix_raw(
     )
     return X, y, feature_names, target_col
 
+def apply_pca(y: np.ndarray, n_components: int, scaler: StandardScaler | None = None) -> tuple[PCA, np.ndarray, StandardScaler]:
+    """PCA-reduce a matrix. Returns (pca_model, transformed_data, scaler)."""
+    if scaler is None:
+        scaler = StandardScaler()
+        y_scaled = scaler.fit_transform(y)
+    else:
+        y_scaled = scaler.transform(y)
+    pca = PCA(n_components=min(n_components, y.shape[1], y.shape[0] - 1))
+    y_pca = pca.fit_transform(y_scaled)
+    return pca, y_pca, scaler
 
 def build_feature_matrix_pca_target(
     df: pd.DataFrame,
@@ -771,4 +781,3 @@ Examples:
 
 if __name__ == "__main__":
     main()
-
