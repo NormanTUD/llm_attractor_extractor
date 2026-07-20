@@ -3,3 +3,4 @@ run.sbatch.txt
 *.out
 *.err
 **/all_layers_all_tokens.csv
+outputs
