@@ -342,10 +342,11 @@ def plot_layer_overview(io_data: dict, title_prefix: str = ""):
 
     # Variance explained bar chart
     ax_var = fig.add_subplot(gs[2, 2])
-    x_pos = np.arange(min(10, len(in_var)))
-    ax_var.bar(x_pos - 0.15, in_var[:len(x_pos)] * 100, width=0.3,
+    n_bars = min(10, len(in_var), len(out_var))
+    x_pos = np.arange(n_bars)
+    ax_var.bar(x_pos - 0.15, in_var[:n_bars] * 100, width=0.3,
                color='steelblue', label='Input', alpha=0.8)
-    ax_var.bar(x_pos + 0.15, out_var[:min(len(x_pos), len(out_var))] * 100, width=0.3,
+    ax_var.bar(x_pos + 0.15, out_var[:n_bars] * 100, width=0.3,
                color='coral', label='Output', alpha=0.8)
     ax_var.set_xlabel("PC index", fontsize=9)
     ax_var.set_ylabel("Var explained (%)", fontsize=9)
