@@ -635,8 +635,6 @@ Examples:
 
     # Close live plot
     if args.live_plot:
-    # Close live plot
-    if args.live_plot:
         plt.ioff()
         plt.show()
 
