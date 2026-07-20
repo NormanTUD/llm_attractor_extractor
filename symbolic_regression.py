@@ -24,6 +24,46 @@ import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
+# =============================================================================
+# Auto-restart under `uv run` (self-bootstrapping)
+# =============================================================================
+
+def _ensure_uv_run():
+    """If not already running under uv, re-exec ourselves with uv run."""
+    if os.environ.get("_UV_RUN_ACTIVE") == "1":
+        return
+    uv_path = shutil.which("uv")
+    if uv_path is None:
+        print("uv not found. Installing...")
+        subprocess.run(
+            ["sh", "-c", "curl -LsSf https://astral.sh/uv/install.sh | sh"],
+            check=True
+        )
+        for p in [
+            os.path.expanduser("~/.local/bin"),
+            os.path.expanduser("~/.cargo/bin"),
+        ]:
+            if p not in os.environ.get("PATH", ""):
+                os.environ["PATH"] = p + ":" + os.environ.get("PATH", "")
+        uv_path = shutil.which("uv")
+        if uv_path is None:
+            print("ERROR: uv installation failed")
+            sys.exit(1)
+
+    script_path = os.path.abspath(__file__)
+    cmd = [uv_path, "run", script_path] + sys.argv[1:]
+    env = os.environ.copy()
+    env["_UV_RUN_ACTIVE"] = "1"
+    print(f"Bootstrapping: {' '.join(cmd)}")
+    if sys.platform == "win32":
+        result = subprocess.run(cmd, env=env)
+        sys.exit(result.returncode)
+    else:
+        os.execvpe(uv_path, cmd, env)
+
+_ensure_uv_run()
+
+
 RESULTS_DIR = Path(__file__).parent / "results_single_word_larger_deepseek"
 
 LAYER_GROUPS = {
