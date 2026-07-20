@@ -100,14 +100,136 @@ def load_layer_data(experiment_dir: Path, layer_idx: int) -> pd.DataFrame:
     path = experiment_dir / "all_token_streams" / f"layer_{layer_idx:03d}.csv"
     return pd.read_csv(path)
 
-
 def build_feature_matrix(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray, list[str]]:
+    """Original: only prompt_idx and token_pos as features, all dims as targets."""
     meta_cols = ["prompt_idx", "token_pos", "token_text"]
     X = df[["prompt_idx", "token_pos"]].values.astype(float)
     y = df.drop(columns=meta_cols).values.astype(float)
     token_texts = df["token_text"].tolist()
     return X, y, token_texts
 
+def build_full_feature_matrix(
+    df: pd.DataFrame, target_dim: int | None = None, pca_features: int = 10
+) -> tuple[np.ndarray, np.ndarray, list[str], list[str]]:
+    """
+    Use prompt_idx, token_pos, AND a PCA-reduced version of all other dims as features.
+    If target_dim is specified, that dim becomes y and the rest become features.
+    Otherwise, returns all dims as y (for later PCA on targets).
+
+    Returns: X, y, feature_names, token_texts
+    """
+    meta_cols = ["prompt_idx", "token_pos", "token_text"]
+    token_texts = df["token_text"].tolist()
+    dim_cols = [c for c in df.columns if c not in meta_cols]
+
+    all_dims = df[dim_cols].values.astype(float)
+    prompt_idx = df["prompt_idx"].values.astype(float).reshape(-1, 1)
+    token_pos = df["token_pos"].values.astype(float).reshape(-1, 1)
+
+    if target_dim is not None:
+        # Target is one specific dimension
+        y = all_dims[:, target_dim]
+        # Features: prompt_idx, token_pos, + PCA of remaining dims
+        remaining_mask = np.ones(all_dims.shape[1], dtype=bool)
+        remaining_mask[target_dim] = False
+        remaining_dims = all_dims[:, remaining_mask]
+    else:
+        y = all_dims
+        remaining_dims = all_dims
+
+    # PCA-reduce the remaining dims to make tractable features
+    n_feat_components = min(pca_features, remaining_dims.shape[1], remaining_dims.shape[0] - 1)
+    if n_feat_components > 0 and remaining_dims.shape[1] > 2:
+        scaler = StandardScaler()
+        remaining_scaled = scaler.fit_transform(remaining_dims)
+        pca = PCA(n_components=n_feat_components)
+        dim_features = pca.fit_transform(remaining_scaled)
+        feat_var = pca.explained_variance_ratio_.sum()
+    else:
+        dim_features = remaining_dims[:, :pca_features]
+        feat_var = 1.0
+
+    # Combine: [prompt_idx, token_pos, pca_feat_0, pca_feat_1, ...]
+    X = np.hstack([prompt_idx, token_pos, dim_features])
+
+    feature_names = ["prompt_idx", "token_pos"] + [f"ctx_pc{i}" for i in range(dim_features.shape[1])]
+
+    return X, y, feature_names, token_texts
+
+def plot_signal_overview(df: pd.DataFrame, layer_idx: int, n_dims_show: int = 8, save_path=None):
+    """
+    Plot the raw activation signals: dims over token_pos, grouped by prompt_idx.
+    This gives you a visual of what the actual data looks like.
+    """
+    meta_cols = ["prompt_idx", "token_pos", "token_text"]
+    dim_cols = [c for c in df.columns if c not in meta_cols]
+
+    # Pick dims with highest variance to show interesting signals
+    variances = df[dim_cols].var().sort_values(ascending=False)
+    top_dims = variances.index[:n_dims_show].tolist()
+
+    n_prompts = df["prompt_idx"].nunique()
+    prompt_ids = sorted(df["prompt_idx"].unique())
+
+    fig, axes = plt.subplots(n_dims_show, 1, figsize=(14, 2.5 * n_dims_show), sharex=True)
+    if n_dims_show == 1:
+        axes = [axes]
+
+    cmap = plt.cm.tab10
+
+    for ax_idx, dim_name in enumerate(top_dims):
+        ax = axes[ax_idx]
+        for i, pid in enumerate(prompt_ids):
+            subset = df[df["prompt_idx"] == pid].sort_values("token_pos")
+            color = cmap(i % 10)
+            ax.plot(subset["token_pos"], subset[dim_name],
+                    color=color, alpha=0.7, linewidth=1.2, label=f"prompt {pid}")
+        ax.set_ylabel(dim_name, fontsize=9)
+        ax.grid(True, alpha=0.2)
+        ax.set_title(f"{dim_name} (var={variances[dim_name]:.2f})", fontsize=9, loc='left')
+
+    axes[-1].set_xlabel("token_pos", fontsize=11)
+    # Legend only on first axis, compact
+    if n_prompts <= 10:
+        axes[0].legend(fontsize=7, ncol=min(5, n_prompts), loc='upper right')
+
+    fig.suptitle(f"Layer {layer_idx} — Top {n_dims_show} Highest-Variance Dimensions (raw signals)",
+                 fontsize=13, fontweight='bold')
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=150, bbox_inches='tight')
+        print(f"  [VIZ] Saved signal overview to {save_path}")
+    else:
+        plt.show()
+    plt.close(fig)
+
+
+def plot_signal_heatmap(df: pd.DataFrame, layer_idx: int, save_path=None):
+    """
+    Heatmap of all activations: rows = samples (prompt_idx × token_pos), cols = dims.
+    """
+    meta_cols = ["prompt_idx", "token_pos", "token_text"]
+    dim_cols = [c for c in df.columns if c not in meta_cols]
+
+    data = df[dim_cols].values
+
+    fig, ax = plt.subplots(figsize=(16, 8))
+    im = ax.imshow(data, aspect='auto', cmap='RdBu_r', interpolation='nearest',
+                   vmin=np.percentile(data, 2), vmax=np.percentile(data, 98))
+    ax.set_xlabel("Dimension", fontsize=11)
+    ax.set_ylabel("Sample (prompt_idx × token_pos)", fontsize=11)
+    ax.set_title(f"Layer {layer_idx} — Activation Heatmap ({data.shape[0]} samples × {data.shape[1]} dims)",
+                 fontsize=12, fontweight='bold')
+    plt.colorbar(im, ax=ax, label="Activation value")
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=150, bbox_inches='tight')
+        print(f"  [VIZ] Saved heatmap to {save_path}")
+    else:
+        plt.show()
+    plt.close(fig)
 
 def build_cross_layer_matrix(
     experiment_dir: Path, layer_indices: list[int]
@@ -380,7 +502,8 @@ Examples:
 
     parser.add_argument("--experiment", "-e", type=str, default=None)
     parser.add_argument("--results-dir", "-r", type=str, default=str(RESULTS_DIR))
-    parser.add_argument("--layers", "-l", type=str, default="all")
+    parser.add_argument("--layers", "-l", type=str, default="20",
+                    help="Layer spec: number, range (e.g. 20-25), group name (early/mid/late/all). Default: 20")
     parser.add_argument("--mode", "-m", choices=["per-layer", "cross-layer"], default="per-layer")
     parser.add_argument("--pca", "-p", type=int, default=10)
     parser.add_argument("--iterations", "-i", type=int, default=30)
@@ -415,6 +538,22 @@ Examples:
         "--full-equations",
         action="store_true",
         help="Print the full Pareto front of equations without truncation",
+    )
+    parser.add_argument(
+        "--use-all-features",
+        action="store_true",
+        default=True,
+        help="Use PCA of all dims as additional input features (not just prompt_idx/token_pos)",
+    )
+    parser.add_argument(
+        "--feature-pca", type=int, default=5,
+        help="Number of PCA components to use as context features from other dims (default: 5)",
+    )
+    parser.add_argument(
+        "--signal-plots",
+        action="store_true",
+        default=True,
+        help="Show raw signal plots (activation dims over token positions)",
     )
 
     args = parser.parse_args()
@@ -494,13 +633,38 @@ Examples:
     if args.mode == "per-layer":
         for layer_idx in layers:
             df = load_layer_data(exp_dir, layer_idx)
-            X_raw, y_raw, token_texts = build_feature_matrix(df)
-            print(f"--- Layer {layer_idx:3d}  (samples={len(y_raw)}, dims={y_raw.shape[1]}) ---")
+            print(f"\n{'='*80}")
+            print(f"=== Layer {layer_idx:3d}  (samples={len(df)}, dims={len([c for c in df.columns if c.startswith('dim_')])}) ===")
+            print(f"{'='*80}")
 
+            # --- Signal overview plots ---
+            if args.signal_plots and args.visualize:
+                sig_path = None
+                if plot_dir:
+                    sig_path = plot_dir / f"{exp_name}_layer{layer_idx:03d}_signals.png"
+                plot_signal_overview(df, layer_idx, n_dims_show=8, save_path=sig_path)
+
+                hm_path = None
+                if plot_dir:
+                    hm_path = plot_dir / f"{exp_name}_layer{layer_idx:03d}_heatmap.png"
+                plot_signal_heatmap(df, layer_idx, save_path=hm_path)
+
+            # --- Build features ---
+            if args.use_all_features:
+                X_raw, y_raw, feature_names_layer, token_texts = build_full_feature_matrix(
+                    df, target_dim=None, pca_features=args.feature_pca
+                )
+                print(f"  Features: {feature_names_layer}")
+                print(f"  X shape: {X_raw.shape} (prompt_idx + token_pos + {args.feature_pca} context PCs)")
+            else:
+                X_raw, y_raw, token_texts = build_feature_matrix(df)
+                feature_names_layer = ["prompt_idx", "token_pos"]
+
+            # --- PCA on targets ---
             if args.pca > 0:
                 pca, y_reduced, scaler = apply_pca(y_raw, args.pca)
                 var_explained = pca.explained_variance_ratio_
-                print(f"  PCA explained variance: {var_explained.sum():.3f} total, "
+                print(f"  Target PCA explained variance: {var_explained.sum():.3f} total, "
                       f"top-3: {var_explained[:3].round(3).tolist()}")
             else:
                 y_reduced = y_raw
@@ -518,10 +682,13 @@ Examples:
                 y_target = y_reduced[:, dim_idx]
 
                 if np.std(y_target) < 1e-10:
+                    print(f"  {label}: SKIPPED (zero variance)")
                     continue
 
+                print(f"\n  --- Fitting {full_label} (std={np.std(y_target):.4f}) ---")
+
                 model = run_symbolic_regression(
-                    X_raw, y_target, feature_names, full_label, args
+                    X_raw, y_target, feature_names_layer, full_label, args
                 )
 
                 # Print full equations table
@@ -530,14 +697,14 @@ Examples:
 
                 # Live plot update
                 if args.live_plot and live_fig is not None:
-                    plot_live_update(X_raw, y_target, model, feature_names, full_label, live_fig, live_axes)
+                    plot_live_update(X_raw, y_target, model, feature_names_layer, full_label, live_fig, live_axes)
 
                 # Full visualization
                 if args.visualize:
                     save_path = None
                     if plot_dir:
                         save_path = plot_dir / f"{exp_name}_layer{layer_idx:03d}_{label}_real_vs_pred.png"
-                    plot_real_vs_predicted(X_raw, y_target, model, feature_names, full_label, save_path)
+                    plot_real_vs_predicted(X_raw, y_target, model, feature_names_layer, full_label, save_path)
 
                     save_path_scores = None
                     if plot_dir:
@@ -557,11 +724,10 @@ Examples:
                 }
                 layer_results["equations"].append(result_entry)
 
-                print(f"  {label}: y = {best_eq}")
-                print(f"         loss={result_entry['loss']:.4e}  complexity={result_entry['complexity']}")
+                print(f"  ✓ {label}: y = {best_eq}")
+                print(f"    loss={result_entry['loss']:.4e}  complexity={result_entry['complexity']}")
 
             all_results.append(layer_results)
-            print()
 
     elif args.mode == "cross-layer":
         X_raw, y_raw, labels = build_cross_layer_matrix(exp_dir, layers)
