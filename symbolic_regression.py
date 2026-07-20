@@ -163,7 +163,6 @@ def run_symbolic_regression(
         maxsize=args.maxsize,
         binary_operators=args.binary_ops.split(","),
         unary_operators=args.unary_ops.split(","),
-        timeout_per_equation=args.timeout,
         deterministic=True,
         random_seed=42,
         progress=False,
@@ -281,12 +280,6 @@ Examples:
         type=str,
         default="sin,cos,exp,log,sqrt,tanh,abs",
         help="Unary operators (default: sin,cos,exp,log,sqrt,tanh,abs)",
-    )
-    parser.add_argument(
-        "--timeout",
-        type=int,
-        default=60,
-        help="Timeout per equation in seconds (default: 60)",
     )
     parser.add_argument(
         "--top-n",
